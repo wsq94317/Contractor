@@ -122,6 +122,10 @@ export async function updateAdminRecord(
 export async function softDeleteRecord(recordId: string) {
   const session = await requireStaffSession();
 
+  if (session.username !== "admin@yehsgroup.com.au") {
+    redirect("/staff/records");
+  }
+
   const record = await prisma.visitRecord.findFirst({
     where: {
       id: recordId,

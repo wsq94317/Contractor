@@ -152,7 +152,7 @@ export function SignInForm({ hotelSlug }: SignInFormProps) {
 
           <div className="space-y-2">
             <label htmlFor="contractorSet" className="text-sm font-semibold text-slate-900">
-              Contractor Set
+              Contractor Key Set
             </label>
             <input id="contractorSet" name="contractorSet" className="form-input" />
           </div>

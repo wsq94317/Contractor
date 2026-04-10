@@ -163,7 +163,7 @@ export function RecordEditorForm({ mode, record }: RecordEditorFormProps) {
 
           <div className="space-y-2">
             <label htmlFor="contractorSet" className="text-sm font-semibold text-slate-900">
-              Contractor Set
+              Contractor Key Set
             </label>
             <input
               id="contractorSet"

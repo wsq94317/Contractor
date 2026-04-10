@@ -18,6 +18,7 @@ type PageProps = {
 
 export default async function StaffRecordsPage({ searchParams }: PageProps) {
   const session = await requireStaffSession();
+  const canDelete = session.username === "admin@yehsgroup.com.au";
   const resolvedSearchParams = await searchParams;
 
   const q = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
@@ -175,11 +176,16 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
                       >
                         Edit
                       </Link>
-                      <form action={softDeleteRecord.bind(null, record.id)}>
-                        <button type="submit" className="text-left text-sm font-semibold text-rose-700">
-                          Delete
-                        </button>
-                      </form>
+                      {canDelete ? (
+                        <form action={softDeleteRecord.bind(null, record.id)}>
+                          <button
+                            type="submit"
+                            className="text-left text-sm font-semibold text-rose-700"
+                          >
+                            Delete
+                          </button>
+                        </form>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
