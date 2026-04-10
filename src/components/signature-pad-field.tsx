@@ -20,6 +20,7 @@ export function SignaturePadField({
 }: SignaturePadFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const signatureRef = useRef<SignatureCanvas>(null);
+  const savedValueRef = useRef(defaultValue ?? "");
   const [value, setValue] = useState(() => defaultValue ?? "");
   const [canvasWidth, setCanvasWidth] = useState(900);
 
@@ -38,23 +39,27 @@ export function SignaturePadField({
   }, []);
 
   useEffect(() => {
-    if (defaultValue && signatureRef.current) {
-      signatureRef.current.fromDataURL(defaultValue);
-    } else if (!defaultValue && value && signatureRef.current) {
-      signatureRef.current.fromDataURL(value);
+    const signaturePad = signatureRef.current;
+    const source = defaultValue ?? savedValueRef.current;
+
+    if (signaturePad && source) {
+      signaturePad.clear();
+      signaturePad.fromDataURL(source);
     }
-  }, [canvasWidth, defaultValue, value]);
+  }, [canvasWidth, defaultValue]);
 
   function syncValue() {
     const nextValue = signatureRef.current?.isEmpty()
       ? ""
       : signatureRef.current?.getTrimmedCanvas().toDataURL("image/png");
 
+    savedValueRef.current = nextValue ?? "";
     setValue(nextValue ?? "");
   }
 
   function clearCanvas() {
     signatureRef.current?.clear();
+    savedValueRef.current = "";
     setValue("");
   }
 

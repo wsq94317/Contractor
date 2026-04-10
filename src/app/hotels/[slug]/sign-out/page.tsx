@@ -21,25 +21,31 @@ export default async function HotelSignOutPage({ params, searchParams }: PagePro
   return (
     <main className="min-h-screen bg-[#f4f7fb] px-6 py-8">
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <div className="rounded-[28px] bg-[#0f2350] px-6 py-5 text-white shadow-[0_22px_60px_rgba(15,35,80,0.22)]">
-          <div className="relative h-20 w-[280px] max-w-full overflow-hidden rounded-2xl bg-white/6 p-2">
-            <Image
-              src={brandAssets.logoSrc}
-              alt={brandAssets.logoAlt}
-              fill
-              className="object-contain p-2"
-              sizes="280px"
-              priority
-            />
+        <div className="rounded-[28px] bg-[#0f2350] px-6 py-6 text-white shadow-[0_22px_60px_rgba(15,35,80,0.22)]">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:gap-6">
+            <div className="relative h-20 w-[280px] shrink-0 max-w-full overflow-hidden rounded-2xl bg-white/6 p-2">
+              <Image
+                src={brandAssets.logoSrc}
+                alt={brandAssets.logoAlt}
+                fill
+                className="object-contain p-2"
+                sizes="280px"
+                priority
+              />
+            </div>
+            <div className="space-y-3 md:min-w-0">
+              <p className="text-xs uppercase tracking-[0.35em] text-[#f1c24a]">Sign Out Page</p>
+              <h1 className="font-heading text-4xl md:text-[3.2rem] md:leading-none">
+                {hotel.shortName} Sign Out
+              </h1>
+              <p className="text-sm text-slate-200">
+                Complete the sign out form, capture both signatures, and close the access record.
+              </p>
+            </div>
           </div>
-          <p className="mt-4 text-xs uppercase tracking-[0.35em] text-[#f1c24a]">{hotel.code}</p>
-          <h1 className="mt-2 font-heading text-4xl">{hotel.name}</h1>
-          <p className="mt-3 text-sm text-slate-200">
-            Complete the sign out, capture both signatures, and close the access record.
-          </p>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href={`/hotels/${hotel.slug}`} className="text-sm font-semibold text-[#0f2350]">
             ← Back to hotel home
           </Link>
