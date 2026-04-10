@@ -20,6 +20,10 @@ function getSecret() {
   return process.env.SESSION_SECRET ?? "contractor-visitor-log-dev-secret";
 }
 
+function isSecureCookieEnabled() {
+  return process.env.SESSION_COOKIE_SECURE === "true";
+}
+
 function encode(value: string) {
   return Buffer.from(value).toString("base64url");
 }
@@ -79,7 +83,7 @@ export async function setSession(payload: SessionPayload) {
   cookieStore.set(COOKIE_NAME, createSessionToken(payload), {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureCookieEnabled(),
     path: "/",
     maxAge: SESSION_MAX_AGE,
   });
@@ -90,7 +94,7 @@ export async function clearSession() {
   cookieStore.set(COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureCookieEnabled(),
     path: "/",
     maxAge: 0,
   });
