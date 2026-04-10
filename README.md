@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Contractor / Visitor Log
 
-## Getting Started
+Multi-hotel contractor, visitor, and temporary access sign in / sign out system built with:
 
-First, run the development server:
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Prisma
+- SQLite
+
+## Features
+
+- Total entry page with 4 hotel cards
+- Hotel-specific home page with `Sign In`, `Sign Out`, and `Staff Log In`
+- Public sign in form with required fields and contractor signature
+- Public sign out form limited to currently open sign in records
+- Dual-signature sign out flow for contractor and hotel staff
+- Hotel-scoped staff login
+- Admin record table with filters, detail page, create, edit, and soft delete
+- Prisma seed data for 4 hotels and staff accounts
+
+## Local setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create or update the database schema:
+
+```bash
+npm run db:migrate
+```
+
+Seed demo hotel and staff data:
+
+```bash
+npm run db:seed
+```
+
+Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Replacing hero placeholder images
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Hotel home page hero images are stored in:
 
-## Learn More
+- `public/hotel-heroes/sydney-qvb.svg`
+- `public/hotel-heroes/sydney-harbour-suites.svg`
+- `public/hotel-heroes/sydney-cbd.svg`
+- `public/hotel-heroes/melbourne-cbd.svg`
 
-To learn more about Next.js, take a look at the following resources:
+You can replace them in either of these ways:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Overwrite the existing files with your final image files if you keep the same filename and path.
+- Add a new image file under `public/hotel-heroes/` and update the path in `src/lib/constants.ts` under `hotelHeroImages`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database notes
 
-## Deploy on Vercel
+- SQLite file path is configured in `.env`
+- Current database path: `C:/Users/bearp/AppData/Local/contractor-visitor-log/dev.db`
+- `db:migrate` is the preferred setup path
+- `db:push` is also available for quick schema sync during development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Seeded hotels
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- YEHS Hotel Sydney QVB
+- YEHS Hotel Sydney Harbour Suites
+- YEHS Hotel Sydney CBD
+- YEHS Hotel Melbourne CBD

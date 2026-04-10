@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum VisitorType {
+  CONTRACTOR
+  VENDOR_SUPPLIER
+  CLIENT_CUSTOMER
+  INTERVIEWEE
+  AUDITOR_INSPECTOR
+  GUEST
+  PRE_ONBOARDED_STAFF
+}
+
+enum TaskStatus {
+  COMPLETE
+  ON_GOING
+  DEFERRED
+  CANCELLED
+  OTHER
+}
+
+enum RecordStatus {
+  OPEN
+  CLOSED
+}
+
+model Hotel {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  slug        String       @unique
+  name        String
+  shortName   String
+  address     String
+  heroTitle   String
+  heroNote    String
+  phone       String?
+  email       String?
+  users       User[]
+  visitRecords VisitRecord[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model User {
+  id           String   @id @default(cuid())
+  hotelId      String
+  hotel        Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  username     String
+  name         String
+  passwordHash String
+  role         Role     @default(STAFF)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([hotelId, username])
+}
+
+model VisitRecord {
+  id                          String       @id @default(cuid())
+  hotelId                     String
+  hotel                       Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  visitorName                 String
+  companyName                 String
+  contactNumber               String
+  carRegistrationNumber       String?
+  visitorType                 VisitorType
+  numberOfVisitors            Int
+  reasonDetail                String
+  contractorSet               String?
+  additionalKey               String?
+  signInSignature             String
+  signInAt                    DateTime     @default(now())
+  signOutAt                   DateTime?
+  taskStatus                  TaskStatus?
+  signOutNote                 String?
+  keyReturnTo                 String?
+  contractorSignOutSignature  String?
+  hotelStaffSignature         String?
+  recordStatus                RecordStatus @default(OPEN)
+  deletedAt                   DateTime?
+  createdAt                   DateTime     @default(now())
+  updatedAt                   DateTime     @updatedAt
+
+  @@index([hotelId, visitorName])
+  @@index([hotelId, recordStatus])
+  @@index([hotelId, signInAt])
+}
