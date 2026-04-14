@@ -59,6 +59,13 @@ export function getDurationHours(signInAt: Date, signOutAt?: Date | null) {
     return "";
   }
 
-  const hours = (signOutAt.getTime() - signInAt.getTime()) / 3_600_000;
-  return hours.toFixed(2);
+  return getDurationHoursValue(signInAt, signOutAt).toFixed(2);
+}
+
+export function getDurationHoursValue(signInAt: Date, signOutAt?: Date | null) {
+  if (!signOutAt) {
+    return 0;
+  }
+
+  return (signOutAt.getTime() - signInAt.getTime()) / 3_600_000;
 }

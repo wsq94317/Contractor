@@ -64,6 +64,9 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
       { companyName: { contains: filters.q } },
       { contactNumber: { contains: filters.q } },
       { reasonDetail: { contains: filters.q } },
+      { staffProfile: { is: { name: { contains: filters.q } } } },
+      { staffProfile: { is: { phone: { contains: filters.q } } } },
+      { staffProfile: { is: { position: { contains: filters.q } } } },
     ];
   }
 
@@ -199,6 +202,9 @@ export async function getStaffAttendanceRecords(filters: AttendanceFilters) {
       { companyName: { contains: filters.q } },
       { contactNumber: { contains: filters.q } },
       { reasonDetail: { contains: filters.q } },
+      { staffProfile: { is: { name: { contains: filters.q } } } },
+      { staffProfile: { is: { phone: { contains: filters.q } } } },
+      { staffProfile: { is: { position: { contains: filters.q } } } },
     ];
   }
 

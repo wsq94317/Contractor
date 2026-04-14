@@ -2,8 +2,14 @@ import Link from "next/link";
 
 import { StaffAdminTabs } from "@/components/staff-admin-tabs";
 import { requireStaffSession } from "@/lib/auth";
+import { groupStaffAttendanceRecords } from "@/lib/attendance";
 import { getStaffAttendanceRecords } from "@/lib/data";
-import { formatDateTime, getDurationHours, getRecordStatusLabel } from "@/lib/format";
+import {
+  formatDateTime,
+  getDurationHours,
+  getDurationHoursValue,
+  getRecordStatusLabel,
+} from "@/lib/format";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -24,12 +30,13 @@ export default async function StaffAttendancePage({ searchParams }: PageProps) {
     dateFrom,
     dateTo,
   });
+  const groupedRecords = groupStaffAttendanceRecords(records);
 
   const openCount = records.filter((record) => !record.signOutAt).length;
-  const totalHours = records.reduce((total, record) => {
-    const hours = Number(getDurationHours(record.signInAt, record.signOutAt) || 0);
-    return total + hours;
-  }, 0);
+  const totalHours = records.reduce(
+    (total, record) => total + getDurationHoursValue(record.signInAt, record.signOutAt),
+    0,
+  );
 
   const exportParams = new URLSearchParams();
   if (q) exportParams.set("q", q);
@@ -87,53 +94,84 @@ export default async function StaffAttendancePage({ searchParams }: PageProps) {
           </button>
         </form>
 
-        <div className="mt-6 overflow-x-auto rounded-[28px] border border-slate-200">
-          <table className="min-w-[1400px] divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-slate-700">
-              <tr>
-                {[
-                  "Staff",
-                  "Phone",
-                  "Position",
-                  "Task",
-                  "Key Set",
-                  "Additional Key",
-                  "Sign In",
-                  "Sign Out",
-                  "Hours",
-                  "Status",
-                ].map((heading) => (
-                  <th key={heading} className="px-4 py-3 font-semibold">
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {records.map((record) => (
-                <tr key={record.id} className="align-top hover:bg-slate-50">
-                  <td className="px-4 py-4 font-semibold text-slate-950">{record.visitorName}</td>
-                  <td className="px-4 py-4">{record.contactNumber}</td>
-                  <td className="px-4 py-4">{record.companyName}</td>
-                  <td className="px-4 py-4">{record.reasonDetail}</td>
-                  <td className="px-4 py-4">{record.contractorSet || "Not provided"}</td>
-                  <td className="px-4 py-4">{record.additionalKey || "Not provided"}</td>
-                  <td className="px-4 py-4">{formatDateTime(record.signInAt)}</td>
-                  <td className="px-4 py-4">{formatDateTime(record.signOutAt)}</td>
-                  <td className="px-4 py-4">{getDurationHours(record.signInAt, record.signOutAt) || "Open"}</td>
-                  <td className="px-4 py-4">{getRecordStatusLabel(record.recordStatus)}</td>
-                </tr>
-              ))}
-              {records.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-slate-500">
-                    No staff attendance records match the current filters.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+        {groupedRecords.length === 0 ? (
+          <div className="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-slate-500">
+            No staff attendance records match the current filters.
+          </div>
+        ) : (
+          <div className="mt-6 space-y-6">
+            {groupedRecords.map((group) => (
+              <section
+                key={group.groupKey}
+                className="overflow-x-auto rounded-[28px] border border-slate-200"
+              >
+                <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Staff</p>
+                    <h3 className="mt-2 text-xl font-semibold text-slate-950">{group.staffName}</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {group.phone}
+                      {group.position ? ` | ${group.position}` : ""}
+                    </p>
+                  </div>
+                  <div className="text-sm font-semibold text-[#0f2350]">
+                    Total Hours: {group.totalHours.toFixed(2)}
+                  </div>
+                </div>
+
+                <table className="min-w-[1200px] divide-y divide-slate-200 text-left text-sm">
+                  <thead className="bg-white text-slate-700">
+                    <tr>
+                      {[
+                        "Date",
+                        "Task",
+                        "Key Set",
+                        "Additional Key",
+                        "Sign In",
+                        "Sign Out",
+                        "Hours",
+                        "Status",
+                      ].map((heading) => (
+                        <th key={heading} className="px-4 py-3 font-semibold">
+                          {heading}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {group.records.map((record) => (
+                      <tr key={record.id} className="align-top hover:bg-slate-50">
+                        <td className="px-4 py-4">
+                          {new Intl.DateTimeFormat("en-AU", {
+                            dateStyle: "medium",
+                          }).format(record.signInAt)}
+                        </td>
+                        <td className="px-4 py-4">{record.reasonDetail}</td>
+                        <td className="px-4 py-4">{record.contractorSet || "Not provided"}</td>
+                        <td className="px-4 py-4">{record.additionalKey || "Not provided"}</td>
+                        <td className="px-4 py-4">{formatDateTime(record.signInAt)}</td>
+                        <td className="px-4 py-4">{formatDateTime(record.signOutAt)}</td>
+                        <td className="px-4 py-4">
+                          {getDurationHours(record.signInAt, record.signOutAt) || "Open"}
+                        </td>
+                        <td className="px-4 py-4">{getRecordStatusLabel(record.recordStatus)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-slate-50">
+                      <td colSpan={6} className="px-4 py-4 text-right font-semibold text-slate-700">
+                        Total Hours
+                      </td>
+                      <td className="px-4 py-4 font-semibold text-[#0f2350]">
+                        {group.totalHours.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4" />
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

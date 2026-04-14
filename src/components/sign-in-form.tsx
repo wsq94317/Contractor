@@ -233,7 +233,7 @@ export function SignInForm({ hotelSlug, staffOptions }: SignInFormProps) {
                 <option value="">Select a configured staff member</option>
                 {staffOptions.map((staff) => (
                   <option key={staff.id} value={staff.id}>
-                    {staff.name} | {staff.position} | {staff.phone}
+                    {staff.name}
                   </option>
                 ))}
               </select>

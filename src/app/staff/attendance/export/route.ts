@@ -1,4 +1,5 @@
 import { getValidatedStaffSession } from "@/lib/auth";
+import { groupStaffAttendanceRecords } from "@/lib/attendance";
 import { getStaffAttendanceRecords } from "@/lib/data";
 import { formatDateTime, getDurationHours, getRecordStatusLabel } from "@/lib/format";
 
@@ -24,12 +25,14 @@ export async function GET(request: Request) {
     dateFrom,
     dateTo,
   });
+  const groupedRecords = groupStaffAttendanceRecords(records);
 
   const header = [
     "Hotel",
     "Staff Name",
     "Phone",
     "Position",
+    "Date",
     "Task",
     "Key Set",
     "Additional Key",
@@ -39,21 +42,43 @@ export async function GET(request: Request) {
     "Status",
   ];
 
-  const rows = records.map((record) => [
-    session.hotelShortName,
-    record.visitorName,
-    record.contactNumber,
-    record.companyName,
-    record.reasonDetail,
-    record.contractorSet ?? "",
-    record.additionalKey ?? "",
-    formatDateTime(record.signInAt),
-    formatDateTime(record.signOutAt),
-    getDurationHours(record.signInAt, record.signOutAt),
-    getRecordStatusLabel(record.recordStatus),
-  ]);
+  const rows = groupedRecords.flatMap((group) => {
+    const detailRows = group.records.map((record) => [
+      session.hotelShortName,
+      group.staffName,
+      group.phone,
+      group.position,
+      new Intl.DateTimeFormat("en-AU", { dateStyle: "medium" }).format(record.signInAt),
+      record.reasonDetail,
+      record.contractorSet ?? "",
+      record.additionalKey ?? "",
+      formatDateTime(record.signInAt),
+      formatDateTime(record.signOutAt),
+      getDurationHours(record.signInAt, record.signOutAt),
+      getRecordStatusLabel(record.recordStatus),
+    ]);
 
-  const csv = [header, ...rows].map((row) => row.map((value) => escapeCsv(String(value))).join(",")).join("\n");
+    detailRows.push([
+      session.hotelShortName,
+      group.staffName,
+      group.phone,
+      group.position,
+      "",
+      "Total Hours",
+      "",
+      "",
+      "",
+      "",
+      group.totalHours.toFixed(2),
+      "",
+    ]);
+
+    return detailRows;
+  });
+
+  const csv = [header, ...rows]
+    .map((row) => row.map((value) => escapeCsv(String(value))).join(","))
+    .join("\n");
 
   return new Response(csv, {
     headers: {

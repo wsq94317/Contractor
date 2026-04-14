@@ -17,7 +17,6 @@ const bodyFont = Manrope({
 export const metadata: Metadata = {
   title: "Contractor & Visitor Log",
   description: "Multi-hotel contractor, visitor, and temporary access log.",
-  manifest: "/manifest.webmanifest",
   icons: {
     icon: [{ url: "/shortcut-icon.png", type: "image/png" }],
     apple: [{ url: "/shortcut-icon.png", type: "image/png" }],

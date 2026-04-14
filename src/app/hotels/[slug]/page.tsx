@@ -40,9 +40,9 @@ export default async function HotelHomePage({ params, searchParams }: PageProps)
 
           <Link
             href={`/hotels/${hotel.slug}/login`}
-            className="rounded-full border border-[#d4a62a] px-4 py-2 text-sm font-semibold text-[#f1c24a] transition hover:bg-[#d4a62a] hover:text-[#0f2350]"
+            className="whitespace-nowrap rounded-full border border-[#d4a62a] px-4 py-2 text-sm font-semibold text-[#f1c24a] transition hover:bg-[#d4a62a] hover:text-[#0f2350]"
           >
-            Staff Log In
+            Admin
           </Link>
         </div>
 
