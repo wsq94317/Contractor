@@ -165,6 +165,8 @@ export async function getStaffProfilesForHotel(hotelId: string) {
       name: true,
       phone: true,
       position: true,
+      companyName: true,
+      carRegistrationNumber: true,
     },
   });
 }

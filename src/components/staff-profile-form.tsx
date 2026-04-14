@@ -17,6 +17,8 @@ type StaffProfileFormProps = {
     name: string;
     phone: string;
     position: string;
+    companyName: string;
+    carRegistrationNumber: string | null;
     hotelIds: string[];
   };
 };
@@ -82,6 +84,34 @@ export function StaffProfileForm({ hotels, staffProfile }: StaffProfileFormProps
           {fieldError(state.errors, "position") ? (
             <p className="form-error">{fieldError(state.errors, "position")}</p>
           ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="companyName" className="text-sm font-semibold text-slate-900">
+            Company Name *
+          </label>
+          <input
+            id="companyName"
+            name="companyName"
+            defaultValue={staffProfile?.companyName ?? "YEHS Hotel"}
+            required
+            className="form-input"
+          />
+          {fieldError(state.errors, "companyName") ? (
+            <p className="form-error">{fieldError(state.errors, "companyName")}</p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="carRegistrationNumber" className="text-sm font-semibold text-slate-900">
+            Car Rego
+          </label>
+          <input
+            id="carRegistrationNumber"
+            name="carRegistrationNumber"
+            defaultValue={staffProfile?.carRegistrationNumber ?? ""}
+            className="form-input"
+          />
         </div>
       </div>
 

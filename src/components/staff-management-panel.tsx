@@ -18,6 +18,8 @@ type StaffManagementPanelProps = {
     name: string;
     phone: string;
     position: string;
+    companyName: string;
+    carRegistrationNumber: string | null;
     hotelIds: string[];
     hotelNames: string[];
   }>;
@@ -72,7 +74,7 @@ export function StaffManagementPanel({
           <table className="min-w-[960px] divide-y divide-slate-200 text-left text-sm">
             <thead className="bg-slate-50 text-slate-700">
               <tr>
-                {["Name", "Phone", "Position", "Hotels", "Actions"].map((heading) => (
+                {["Name", "Phone", "Position", "Company", "Car Rego", "Hotels", "Actions"].map((heading) => (
                   <th key={heading} className="px-4 py-3 font-semibold">
                     {heading}
                   </th>
@@ -85,6 +87,8 @@ export function StaffManagementPanel({
                   <td className="px-4 py-4 font-semibold text-slate-950">{staffProfile.name}</td>
                   <td className="px-4 py-4">{staffProfile.phone}</td>
                   <td className="px-4 py-4">{staffProfile.position}</td>
+                  <td className="px-4 py-4">{staffProfile.companyName}</td>
+                  <td className="px-4 py-4">{staffProfile.carRegistrationNumber || "Not provided"}</td>
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-2">
                       {staffProfile.hotelNames.map((hotelName) => (
@@ -121,7 +125,7 @@ export function StaffManagementPanel({
               ))}
               {staffProfiles.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
                     No staff have been configured yet.
                   </td>
                 </tr>

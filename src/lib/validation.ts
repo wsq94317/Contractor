@@ -62,6 +62,7 @@ export const loginSchema = z.object({
 
 export const adminRecordSchema = z
   .object({
+    signInType: z.nativeEnum(SignInType),
     visitorName: z.string().trim().min(1, "Visitor name is required."),
     companyName: z.string().trim().min(1, "Company name is required."),
     contactNumber: z.string().trim().min(1, "Contact number is required."),
@@ -128,6 +129,8 @@ export const staffProfileSchema = z.object({
   name: z.string().trim().min(1, "Staff name is required."),
   phone: z.string().trim().min(1, "Phone number is required."),
   position: z.string().trim().min(1, "Position is required."),
+  companyName: z.string().trim().min(1, "Company name is required."),
+  carRegistrationNumber: optionalText,
   hotelIds: z
     .array(z.string().trim().min(1))
     .min(1, "Select at least one hotel.")

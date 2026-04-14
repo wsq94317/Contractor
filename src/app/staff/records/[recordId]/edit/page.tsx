@@ -45,6 +45,7 @@ export default async function EditRecordPage({ params }: PageProps) {
           mode="edit"
           record={{
             id: record.id,
+            signInType: record.signInType,
             visitorName: record.visitorName,
             companyName: record.companyName,
             contactNumber: record.contactNumber,

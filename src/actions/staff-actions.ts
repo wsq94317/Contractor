@@ -28,6 +28,8 @@ async function parseStaffProfile(formData: FormData) {
     name: String(formData.get("name") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     position: String(formData.get("position") ?? ""),
+    companyName: String(formData.get("companyName") ?? ""),
+    carRegistrationNumber: String(formData.get("carRegistrationNumber") ?? ""),
     hotelIds: formData.getAll("hotelIds").map(String),
   });
 
@@ -63,6 +65,8 @@ export async function createStaffProfile(
       name: parsed.data.name,
       phone: parsed.data.phone,
       position: parsed.data.position,
+      companyName: parsed.data.companyName,
+      carRegistrationNumber: parsed.data.carRegistrationNumber,
       hotels: {
         create: parsed.data.hotelIds.map((hotelId) => ({
           hotelId,
@@ -105,6 +109,8 @@ export async function updateStaffProfile(
       name: parsed.data.name,
       phone: parsed.data.phone,
       position: parsed.data.position,
+      companyName: parsed.data.companyName,
+      carRegistrationNumber: parsed.data.carRegistrationNumber,
       hotels: {
         deleteMany: {},
         create: parsed.data.hotelIds.map((hotelId) => ({

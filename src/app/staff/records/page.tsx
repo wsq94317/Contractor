@@ -118,7 +118,7 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
               <tr>
                 {[
                   "Visitor",
-                  "Type",
+                  "Sign In Type",
                   "Company",
                   "Contact",
                   "Visitor Type",

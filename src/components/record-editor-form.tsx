@@ -1,12 +1,17 @@
 "use client";
 
-import { RecordStatus, TaskStatus, VisitorType } from "@prisma/client";
+import { RecordStatus, SignInType, TaskStatus, VisitorType } from "@prisma/client";
 import { useActionState } from "react";
 
 import { createAdminRecord, updateAdminRecord } from "@/actions/record-actions";
 import { SignaturePadField } from "@/components/signature-pad-field";
 import { SubmitButton } from "@/components/submit-button";
-import { recordStatusOptions, taskStatusOptions, visitorTypeOptions } from "@/lib/constants";
+import {
+  recordStatusOptions,
+  signInTypeLabels,
+  taskStatusOptions,
+  visitorTypeOptions,
+} from "@/lib/constants";
 import { toDateTimeLocal } from "@/lib/format";
 import type { ActionState } from "@/lib/validation";
 
@@ -14,6 +19,7 @@ type RecordEditorFormProps = {
   mode: "create" | "edit";
   record?: {
     id: string;
+    signInType: SignInType;
     visitorName: string;
     companyName: string;
     contactNumber: string;
@@ -58,6 +64,27 @@ export function RecordEditorForm({ mode, record }: RecordEditorFormProps) {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <label htmlFor="signInType" className="text-sm font-semibold text-slate-900">
+              Sign In Type *
+            </label>
+            <select
+              id="signInType"
+              name="signInType"
+              defaultValue={record?.signInType ?? SignInType.CONTRACTOR}
+              className="form-input"
+            >
+              {Object.entries(signInTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {fieldError(state.errors, "signInType") ? (
+              <p className="form-error">{fieldError(state.errors, "signInType")}</p>
+            ) : null}
+          </div>
+
           <div className="space-y-2">
             <label htmlFor="visitorName" className="text-sm font-semibold text-slate-900">
               Visitor Name *

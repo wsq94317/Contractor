@@ -53,7 +53,7 @@ export const recordStatusOptions: Array<{ value: RecordStatus; label: string }> 
 
 export const signInTypeLabels: Record<SignInType, string> = {
   CONTRACTOR: "Contractor",
-  STAFF: "Staff",
+  STAFF: "Hotel Staff",
 };
 
 export const roleLabels: Record<Role, string> = {

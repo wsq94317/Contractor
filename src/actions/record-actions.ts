@@ -1,6 +1,6 @@
 "use server";
 
-import { RecordStatus } from "@prisma/client";
+import { RecordStatus, SignInType, VisitorType } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -32,7 +32,11 @@ async function parseAdminRecord(formData: FormData) {
 }
 
 function buildRecordPayload(data: NonNullable<Awaited<ReturnType<typeof parseAdminRecord>>["data"]>) {
+  const signInType =
+    data.visitorType === VisitorType.HOTEL_STAFF ? SignInType.STAFF : data.signInType;
+
   return {
+    signInType,
     visitorName: data.visitorName,
     companyName: data.companyName,
     contactNumber: data.contactNumber,

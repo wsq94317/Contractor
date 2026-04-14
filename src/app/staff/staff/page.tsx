@@ -67,6 +67,8 @@ export default async function StaffManagementPage({ searchParams }: PageProps) {
           name: staffProfile.name,
           phone: staffProfile.phone,
           position: staffProfile.position,
+          companyName: staffProfile.companyName,
+          carRegistrationNumber: staffProfile.carRegistrationNumber,
           hotelIds: staffProfile.hotels.map((assignment) => assignment.hotelId),
           hotelNames: staffProfile.hotels.map((assignment) => assignment.hotel.shortName),
         }))}
