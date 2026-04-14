@@ -2,7 +2,7 @@ import Link from "next/link";
 import { RecordStatus } from "@prisma/client";
 
 import { softDeleteRecord } from "@/actions/record-actions";
-import { requireStaffSession } from "@/lib/auth";
+import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
 import { recordStatusOptions, visitorTypeOptions } from "@/lib/constants";
 import { getFilteredVisitRecords } from "@/lib/data";
 import {
@@ -18,7 +18,7 @@ type PageProps = {
 
 export default async function StaffRecordsPage({ searchParams }: PageProps) {
   const session = await requireStaffSession();
-  const canDelete = session.username === "admin@yehsgroup.com.au";
+  const canManageRecords = isSuperAdmin(session.username);
   const resolvedSearchParams = await searchParams;
 
   const q = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
@@ -170,13 +170,15 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
                       >
                         View
                       </Link>
-                      <Link
-                        href={`/staff/records/${record.id}/edit`}
-                        className="text-sm font-semibold text-[#8b6914]"
-                      >
-                        Edit
-                      </Link>
-                      {canDelete ? (
+                      {canManageRecords ? (
+                        <Link
+                          href={`/staff/records/${record.id}/edit`}
+                          className="text-sm font-semibold text-[#8b6914]"
+                        >
+                          Edit
+                        </Link>
+                      ) : null}
+                      {canManageRecords ? (
                         <form action={softDeleteRecord.bind(null, record.id)}>
                           <button
                             type="submit"

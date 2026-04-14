@@ -1,5 +1,8 @@
 import { RecordStatus, Role, TaskStatus, VisitorType } from "@prisma/client";
 
+export const SUPER_ADMIN_USERNAME = "admin@yehsgroup.com.au";
+export const APP_TIME_ZONE = "Australia/Sydney";
+
 export const visitorTypeOptions: Array<{ value: VisitorType; label: string }> = [
   {
     value: VisitorType.CONTRACTOR,

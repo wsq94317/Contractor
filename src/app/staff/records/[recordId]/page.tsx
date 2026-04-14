@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { requireStaffSession } from "@/lib/auth";
+import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
 import { getVisitRecordForHotel } from "@/lib/data";
 import {
   formatDateTime,
@@ -16,6 +16,7 @@ type PageProps = {
 
 export default async function RecordDetailPage({ params }: PageProps) {
   const session = await requireStaffSession();
+  const canManageRecords = isSuperAdmin(session.username);
   const { recordId } = await params;
   const record = await getVisitRecordForHotel(recordId, session.hotelId);
 
@@ -34,12 +35,14 @@ export default async function RecordDetailPage({ params }: PageProps) {
           <Link href="/staff/records" className="text-sm font-semibold text-[#0f2350]">
             ← Back
           </Link>
-          <Link
-            href={`/staff/records/${record.id}/edit`}
-            className="rounded-full border border-[#0f2350] px-4 py-2 text-sm font-semibold text-[#0f2350]"
-          >
-            Edit
-          </Link>
+          {canManageRecords ? (
+            <Link
+              href={`/staff/records/${record.id}/edit`}
+              className="rounded-full border border-[#0f2350] px-4 py-2 text-sm font-semibold text-[#0f2350]"
+            >
+              Edit
+            </Link>
+          ) : null}
         </div>
       </div>
 

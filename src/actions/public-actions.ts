@@ -51,7 +51,7 @@ export async function submitSignIn(
   });
 
   revalidatePath(`/hotels/${hotel.slug}/sign-out`);
-  redirect(`/hotels/${hotel.slug}/sign-in?success=1`);
+  redirect(`/hotels/${hotel.slug}?signedIn=1`);
 }
 
 export async function submitSignOut(
@@ -105,5 +105,5 @@ export async function submitSignOut(
 
   revalidatePath(`/hotels/${hotel.slug}/sign-out`);
   revalidatePath("/staff/records");
-  redirect(`/hotels/${hotel.slug}/sign-out?success=1`);
+  redirect(`/hotels/${hotel.slug}?signedOut=1`);
 }

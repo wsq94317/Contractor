@@ -1,6 +1,11 @@
 import { RecordStatus, TaskStatus, VisitorType } from "@prisma/client";
 
-import { recordStatusOptions, taskStatusOptions, visitorTypeOptions } from "@/lib/constants";
+import {
+  APP_TIME_ZONE,
+  recordStatusOptions,
+  taskStatusOptions,
+  visitorTypeOptions,
+} from "@/lib/constants";
 
 export function formatDateTime(value?: Date | null) {
   if (!value) {
@@ -10,6 +15,7 @@ export function formatDateTime(value?: Date | null) {
   return new Intl.DateTimeFormat("en-AU", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: APP_TIME_ZONE,
   }).format(value);
 }
 

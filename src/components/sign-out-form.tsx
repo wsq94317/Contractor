@@ -6,7 +6,7 @@ import { useActionState } from "react";
 import { submitSignOut } from "@/actions/public-actions";
 import { SignaturePadField } from "@/components/signature-pad-field";
 import { SubmitButton } from "@/components/submit-button";
-import { taskStatusOptions } from "@/lib/constants";
+import { APP_TIME_ZONE, taskStatusOptions } from "@/lib/constants";
 import type { ActionState } from "@/lib/validation";
 
 type SignOutFormProps = {
@@ -45,6 +45,7 @@ export function SignOutForm({ hotelSlug, openRecords }: SignOutFormProps) {
               {new Intl.DateTimeFormat("en-AU", {
                 dateStyle: "medium",
                 timeStyle: "short",
+                timeZone: APP_TIME_ZONE,
               }).format(record.signInAt)}
             </option>
           ))}

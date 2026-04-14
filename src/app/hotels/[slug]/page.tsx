@@ -6,12 +6,16 @@ import { getHotelBySlug } from "@/lib/data";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function HotelHomePage({ params }: PageProps) {
+export default async function HotelHomePage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
   const hotel = await getHotelBySlug(slug);
   const brandAssets = hotelBrandAssets[hotel.slug] ?? hotelBrandAssets["sydney-qvb"];
+  const signedIn = resolvedSearchParams.signedIn === "1";
+  const signedOut = resolvedSearchParams.signedOut === "1";
 
   return (
     <main className="min-h-screen bg-[#0a3154] px-6 py-8 text-white">
@@ -41,6 +45,18 @@ export default async function HotelHomePage({ params }: PageProps) {
             Staff Log In
           </Link>
         </div>
+
+        {signedIn ? (
+          <div className="rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+            Sign in record saved successfully.
+          </div>
+        ) : null}
+
+        {signedOut ? (
+          <div className="rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+            Sign out record saved successfully.
+          </div>
+        ) : null}
 
         <section className="overflow-hidden rounded-[32px] border border-[#d4a62a]/60 bg-[#1d2552] shadow-[0_28px_70px_rgba(2,12,27,0.35)]">
           <div className="relative flex min-h-[480px] items-center justify-center overflow-hidden border-b border-[#d4a62a]/30 bg-[radial-gradient(circle_at_top_left,_rgba(212,166,42,0.18),_transparent_25%),linear-gradient(160deg,#10244e_0%,#0f2350_58%,#14213d_100%)] p-4 sm:min-h-[560px] sm:p-6">

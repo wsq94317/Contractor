@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { RecordEditorForm } from "@/components/record-editor-form";
-import { requireStaffSession } from "@/lib/auth";
+import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
 import { getVisitRecordForHotel } from "@/lib/data";
 
 type PageProps = {
@@ -11,6 +11,11 @@ type PageProps = {
 
 export default async function EditRecordPage({ params }: PageProps) {
   const session = await requireStaffSession();
+
+  if (!isSuperAdmin(session.username)) {
+    redirect("/staff/records");
+  }
+
   const { recordId } = await params;
   const record = await getVisitRecordForHotel(recordId, session.hotelId);
 

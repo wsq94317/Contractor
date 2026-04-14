@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 
 type SignaturePadFieldProps = {
@@ -22,6 +22,7 @@ export function SignaturePadField({
   const signatureRef = useRef<SignatureCanvas>(null);
   const savedValueRef = useRef(defaultValue ?? "");
   const [value, setValue] = useState(() => defaultValue ?? "");
+  const [isUsingCanvas, setIsUsingCanvas] = useState(() => !defaultValue);
   const [canvasWidth, setCanvasWidth] = useState(900);
 
   useLayoutEffect(() => {
@@ -38,16 +39,6 @@ export function SignaturePadField({
     };
   }, []);
 
-  useEffect(() => {
-    const signaturePad = signatureRef.current;
-    const source = defaultValue ?? savedValueRef.current;
-
-    if (signaturePad && source) {
-      signaturePad.clear();
-      signaturePad.fromDataURL(source);
-    }
-  }, [canvasWidth, defaultValue]);
-
   function syncValue() {
     const nextValue = signatureRef.current?.isEmpty()
       ? ""
@@ -61,6 +52,7 @@ export function SignaturePadField({
     signatureRef.current?.clear();
     savedValueRef.current = "";
     setValue("");
+    setIsUsingCanvas(true);
   }
 
   return (
@@ -75,25 +67,32 @@ export function SignaturePadField({
           onClick={clearCanvas}
           className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-[#d4a62a] hover:text-[#8b6914]"
         >
-          Clear
+          {value && !isUsingCanvas ? "Clear & Re-sign" : "Clear"}
         </button>
       </div>
-      <div
-        ref={containerRef}
-        className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.08)]"
-      >
-        <SignatureCanvas
-          ref={signatureRef}
-          onEnd={syncValue}
-          penColor="#0f172a"
-          backgroundColor="white"
-          canvasProps={{
-            width: canvasWidth,
-            height: 220,
-            className: "h-[220px] w-full touch-none select-none cursor-crosshair",
-          }}
-        />
-      </div>
+      {value && !isUsingCanvas ? (
+        <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt={label} className="h-auto w-full rounded-2xl bg-white" />
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.08)]"
+        >
+          <SignatureCanvas
+            ref={signatureRef}
+            onEnd={syncValue}
+            penColor="#0f172a"
+            backgroundColor="white"
+            canvasProps={{
+              width: canvasWidth,
+              height: 220,
+              className: "h-[220px] w-full touch-none select-none cursor-crosshair",
+            }}
+          />
+        </div>
+      )}
       <input type="hidden" name={name} value={value} />
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
     </div>

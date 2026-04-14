@@ -4,7 +4,7 @@ import { RecordStatus } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import { requireStaffSession } from "@/lib/auth";
+import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { adminRecordSchema, type ActionState } from "@/lib/validation";
 
@@ -86,6 +86,11 @@ export async function updateAdminRecord(
   formData: FormData,
 ): Promise<ActionState> {
   const session = await requireStaffSession();
+
+  if (!isSuperAdmin(session.username)) {
+    redirect("/staff/records");
+  }
+
   const recordId = String(formData.get("recordId") ?? "");
 
   if (!recordId) {
@@ -122,7 +127,7 @@ export async function updateAdminRecord(
 export async function softDeleteRecord(recordId: string) {
   const session = await requireStaffSession();
 
-  if (session.username !== "admin@yehsgroup.com.au") {
+  if (!isSuperAdmin(session.username)) {
     redirect("/staff/records");
   }
 

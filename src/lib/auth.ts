@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { clearSession, getSession, setSession } from "@/lib/session";
+import { SUPER_ADMIN_USERNAME } from "@/lib/constants";
 
 export const requireStaffSession = cache(async () => {
   const session = await getSession();
@@ -66,4 +67,8 @@ export async function authenticateHotelUser(hotelSlug: string, username: string,
   });
 
   return user;
+}
+
+export function isSuperAdmin(username: string) {
+  return username === SUPER_ADMIN_USERNAME;
 }
