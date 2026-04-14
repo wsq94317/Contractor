@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { SignInForm } from "@/components/sign-in-form";
 import { hotelBrandAssets } from "@/lib/constants";
-import { getHotelBySlug } from "@/lib/data";
+import { getHotelBySlug, getStaffProfilesForHotel } from "@/lib/data";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -13,6 +13,7 @@ type PageProps = {
 export default async function HotelSignInPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const hotel = await getHotelBySlug(slug);
+  const staffOptions = await getStaffProfilesForHotel(hotel.id);
   const brandAssets = hotelBrandAssets[hotel.slug] ?? hotelBrandAssets["sydney-qvb"];
   const resolvedSearchParams = await searchParams;
   const isSuccess = resolvedSearchParams.success === "1";
@@ -38,7 +39,7 @@ export default async function HotelSignInPage({ params, searchParams }: PageProp
                 {hotel.shortName} Sign In
               </h1>
               <p className="text-sm text-slate-200">
-                Complete the visitor and contractor sign in form for authorised building access.
+                Switch between contractor and staff sign in for authorised building access.
               </p>
             </div>
           </div>
@@ -60,7 +61,7 @@ export default async function HotelSignInPage({ params, searchParams }: PageProp
         ) : null}
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_28px_70px_rgba(15,23,42,0.08)] sm:p-8">
-          <SignInForm hotelSlug={hotel.slug} />
+          <SignInForm hotelSlug={hotel.slug} staffOptions={staffOptions} />
         </section>
       </div>
     </main>

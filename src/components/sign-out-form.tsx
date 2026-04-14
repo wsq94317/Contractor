@@ -1,6 +1,6 @@
 "use client";
 
-import { TaskStatus } from "@prisma/client";
+import { SignInType, TaskStatus } from "@prisma/client";
 import { useActionState } from "react";
 
 import { submitSignOut } from "@/actions/public-actions";
@@ -13,6 +13,7 @@ type SignOutFormProps = {
   hotelSlug: string;
   openRecords: Array<{
     id: string;
+    signInType: SignInType;
     visitorName: string;
     companyName: string;
     signInAt: Date;
@@ -41,6 +42,7 @@ export function SignOutForm({ hotelSlug, openRecords }: SignOutFormProps) {
           <option value="">Select an active sign in record</option>
           {openRecords.map((record) => (
             <option key={record.id} value={record.id}>
+              [{record.signInType === SignInType.STAFF ? "Staff" : "Contractor"}]{" "}
               {record.visitorName} | {record.companyName} | Signed in{" "}
               {new Intl.DateTimeFormat("en-AU", {
                 dateStyle: "medium",

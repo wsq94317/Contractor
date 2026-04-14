@@ -1,4 +1,4 @@
-import { RecordStatus, TaskStatus, VisitorType } from "@prisma/client";
+import { RecordStatus, SignInType, TaskStatus, VisitorType } from "@prisma/client";
 import { z } from "zod";
 
 const signatureSchema = z
@@ -15,22 +15,34 @@ const optionalText = z.preprocess((value) => {
   return trimmed.length ? trimmed : undefined;
 }, z.string().optional());
 
-export const signInSchema = z.object({
-  hotelSlug: z.string().min(1),
-  visitorName: z.string().trim().min(1, "Visitor name is required."),
-  companyName: z.string().trim().min(1, "Company name is required."),
-  contactNumber: z.string().trim().min(1, "Contact number is required."),
-  carRegistrationNumber: optionalText,
-  visitorType: z.nativeEnum(VisitorType),
-  numberOfVisitors: z.coerce
-    .number()
-    .int("Number of visitors must be a whole number.")
-    .min(1, "Number of visitors must be at least 1."),
-  reasonDetail: z.string().trim().min(1, "Visit reason is required."),
-  contractorSet: optionalText,
-  additionalKey: optionalText,
-  signInSignature: signatureSchema,
-});
+export const signInSchema = z.discriminatedUnion("signInType", [
+  z.object({
+    hotelSlug: z.string().min(1),
+    signInType: z.literal(SignInType.CONTRACTOR),
+    visitorName: z.string().trim().min(1, "Visitor name is required."),
+    companyName: z.string().trim().min(1, "Company name is required."),
+    contactNumber: z.string().trim().min(1, "Contact number is required."),
+    carRegistrationNumber: optionalText,
+    visitorType: z.nativeEnum(VisitorType),
+    numberOfVisitors: z.coerce
+      .number()
+      .int("Number of visitors must be a whole number.")
+      .min(1, "Number of visitors must be at least 1."),
+    reasonDetail: z.string().trim().min(1, "Visit reason is required."),
+    contractorSet: optionalText,
+    additionalKey: optionalText,
+    signInSignature: signatureSchema,
+  }),
+  z.object({
+    hotelSlug: z.string().min(1),
+    signInType: z.literal(SignInType.STAFF),
+    staffProfileId: z.string().trim().min(1, "Staff name is required."),
+    reasonDetail: z.string().trim().min(1, "Reason / task is required."),
+    contractorSet: optionalText,
+    additionalKey: optionalText,
+    signInSignature: signatureSchema,
+  }),
+]);
 
 export const signOutSchema = z.object({
   hotelSlug: z.string().min(1),
@@ -111,6 +123,16 @@ export const adminRecordSchema = z
       }
     }
   });
+
+export const staffProfileSchema = z.object({
+  name: z.string().trim().min(1, "Staff name is required."),
+  phone: z.string().trim().min(1, "Phone number is required."),
+  position: z.string().trim().min(1, "Position is required."),
+  hotelIds: z
+    .array(z.string().trim().min(1))
+    .min(1, "Select at least one hotel.")
+    .or(z.string().trim().min(1).transform((value) => [value])),
+});
 
 export type ActionState = {
   success?: boolean;

@@ -25,6 +25,7 @@ enum VisitorType {
   AUDITOR_INSPECTOR
   GUEST
   PRE_ONBOARDED_STAFF
+  HOTEL_STAFF
 }
 
 enum TaskStatus {
@@ -40,21 +41,27 @@ enum RecordStatus {
   CLOSED
 }
 
+enum SignInType {
+  CONTRACTOR
+  STAFF
+}
+
 model Hotel {
-  id          String       @id @default(cuid())
-  code        String       @unique
-  slug        String       @unique
-  name        String
-  shortName   String
-  address     String
-  heroTitle   String
-  heroNote    String
-  phone       String?
-  email       String?
-  users       User[]
-  visitRecords VisitRecord[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id              String             @id @default(cuid())
+  code            String             @unique
+  slug            String             @unique
+  name            String
+  shortName       String
+  address         String
+  heroTitle       String
+  heroNote        String
+  phone           String?
+  email           String?
+  users           User[]
+  visitRecords    VisitRecord[]
+  staffAssignments StaffProfileHotel[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 }
 
 model User {
@@ -72,10 +79,36 @@ model User {
   @@unique([hotelId, username])
 }
 
+model StaffProfile {
+  id          String             @id @default(cuid())
+  name        String
+  phone       String
+  position    String
+  hotels      StaffProfileHotel[]
+  visitRecords VisitRecord[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([name])
+}
+
+model StaffProfileHotel {
+  staffProfileId String
+  hotelId        String
+  staffProfile   StaffProfile @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+  hotel          Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@id([staffProfileId, hotelId])
+  @@index([hotelId])
+}
+
 model VisitRecord {
   id                          String       @id @default(cuid())
   hotelId                     String
   hotel                       Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  signInType                  SignInType   @default(CONTRACTOR)
+  staffProfileId              String?
+  staffProfile                StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: SetNull)
   visitorName                 String
   companyName                 String
   contactNumber               String
@@ -101,4 +134,6 @@ model VisitRecord {
   @@index([hotelId, visitorName])
   @@index([hotelId, recordStatus])
   @@index([hotelId, signInAt])
+  @@index([hotelId, signInType, signInAt])
+  @@index([staffProfileId, signInAt])
 }

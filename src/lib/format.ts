@@ -1,8 +1,9 @@
-import { RecordStatus, TaskStatus, VisitorType } from "@prisma/client";
+import { RecordStatus, SignInType, TaskStatus, VisitorType } from "@prisma/client";
 
 import {
   APP_TIME_ZONE,
   recordStatusOptions,
+  signInTypeLabels,
   taskStatusOptions,
   visitorTypeOptions,
 } from "@/lib/constants";
@@ -47,4 +48,17 @@ export function getTaskStatusLabel(value?: TaskStatus | null) {
 
 export function getRecordStatusLabel(value: RecordStatus) {
   return recordStatusOptions.find((option) => option.value === value)?.label ?? value;
+}
+
+export function getSignInTypeLabel(value: SignInType) {
+  return signInTypeLabels[value] ?? value;
+}
+
+export function getDurationHours(signInAt: Date, signOutAt?: Date | null) {
+  if (!signOutAt) {
+    return "";
+  }
+
+  const hours = (signOutAt.getTime() - signInAt.getTime()) / 3_600_000;
+  return hours.toFixed(2);
 }

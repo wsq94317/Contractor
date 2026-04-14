@@ -30,6 +30,18 @@ export default async function StaffLayout({
               Records
             </Link>
             <Link
+              href="/staff/staff"
+              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-[#d4a62a] hover:text-[#8b6914]"
+            >
+              Staff Management
+            </Link>
+            <Link
+              href="/staff/attendance"
+              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-[#d4a62a] hover:text-[#8b6914]"
+            >
+              Staff Attendance
+            </Link>
+            <Link
               href="/staff/records/new"
               className="rounded-full border border-[#0f2350] bg-[#0f2350] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#17346f]"
             >

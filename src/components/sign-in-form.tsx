@@ -1,6 +1,6 @@
 "use client";
 
-import { VisitorType } from "@prisma/client";
+import { SignInType, VisitorType } from "@prisma/client";
 import { useActionState, useRef, useState, type FormEvent } from "react";
 
 import { submitSignIn } from "@/actions/public-actions";
@@ -11,6 +11,12 @@ import type { ActionState } from "@/lib/validation";
 
 type SignInFormProps = {
   hotelSlug: string;
+  staffOptions: Array<{
+    id: string;
+    name: string;
+    phone: string;
+    position: string;
+  }>;
 };
 
 const initialState: ActionState = {};
@@ -43,14 +49,15 @@ function fieldError(errors: ActionState["errors"], name: string) {
   return errors?.[name]?.[0];
 }
 
-export function SignInForm({ hotelSlug }: SignInFormProps) {
+export function SignInForm({ hotelSlug, staffOptions }: SignInFormProps) {
   const [state, formAction] = useActionState(submitSignIn, initialState);
+  const [activeTab, setActiveTab] = useState<SignInType>(SignInType.CONTRACTOR);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const acknowledgedRef = useRef(false);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (acknowledgedRef.current) {
+    if (activeTab !== SignInType.CONTRACTOR || acknowledgedRef.current) {
       return;
     }
 
@@ -68,112 +75,212 @@ export function SignInForm({ hotelSlug }: SignInFormProps) {
     <>
       <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="space-y-6">
         <input type="hidden" name="hotelSlug" value={hotelSlug} />
+        <input type="hidden" name="signInType" value={activeTab} />
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <label htmlFor="visitorName" className="text-sm font-semibold text-slate-900">
-              Visitor Name *
-            </label>
-            <input id="visitorName" name="visitorName" required className="form-input" />
-            {fieldError(state.errors, "visitorName") ? (
-              <p className="form-error">{fieldError(state.errors, "visitorName")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="companyName" className="text-sm font-semibold text-slate-900">
-              Company Name *
-            </label>
-            <input id="companyName" name="companyName" required className="form-input" />
-            {fieldError(state.errors, "companyName") ? (
-              <p className="form-error">{fieldError(state.errors, "companyName")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="contactNumber" className="text-sm font-semibold text-slate-900">
-              Contact Number *
-            </label>
-            <input id="contactNumber" name="contactNumber" required className="form-input" />
-            {fieldError(state.errors, "contactNumber") ? (
-              <p className="form-error">{fieldError(state.errors, "contactNumber")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <label
-              htmlFor="carRegistrationNumber"
-              className="text-sm font-semibold text-slate-900"
+        <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
+          {[
+            { value: SignInType.CONTRACTOR, label: "Contractor" },
+            { value: SignInType.STAFF, label: "Staff" },
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setActiveTab(tab.value)}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === tab.value
+                  ? "bg-[#0f2350] text-white"
+                  : "text-slate-700 hover:text-[#0f2350]"
+              }`}
             >
-              Car Registration Number
-            </label>
-            <input id="carRegistrationNumber" name="carRegistrationNumber" className="form-input" />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <label htmlFor="visitorType" className="text-sm font-semibold text-slate-900">
-              Visitor Type *
-            </label>
-            <select
-              id="visitorType"
-              name="visitorType"
-              defaultValue={VisitorType.CONTRACTOR}
-              required
-              className="form-input"
-            >
-              {visitorTypeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {fieldError(state.errors, "visitorType") ? (
-              <p className="form-error">{fieldError(state.errors, "visitorType")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="numberOfVisitors" className="text-sm font-semibold text-slate-900">
-              Number of Visitors *
-            </label>
-            <input
-              id="numberOfVisitors"
-              name="numberOfVisitors"
-              type="number"
-              min="1"
-              defaultValue="1"
-              required
-              className="form-input"
-            />
-            {fieldError(state.errors, "numberOfVisitors") ? (
-              <p className="form-error">{fieldError(state.errors, "numberOfVisitors")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="contractorSet" className="text-sm font-semibold text-slate-900">
-              Contractor Key Set
-            </label>
-            <input id="contractorSet" name="contractorSet" className="form-input" />
-          </div>
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="reasonDetail" className="text-sm font-semibold text-slate-900">
-            Reason/Detail of the Visit *
-          </label>
-          <textarea id="reasonDetail" name="reasonDetail" required rows={4} className="form-input" />
-          {fieldError(state.errors, "reasonDetail") ? (
-            <p className="form-error">{fieldError(state.errors, "reasonDetail")}</p>
-          ) : null}
-        </div>
+        {activeTab === SignInType.CONTRACTOR ? (
+          <>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="visitorName" className="text-sm font-semibold text-slate-900">
+                  Visitor Name *
+                </label>
+                <input id="visitorName" name="visitorName" required className="form-input" />
+                {fieldError(state.errors, "visitorName") ? (
+                  <p className="form-error">{fieldError(state.errors, "visitorName")}</p>
+                ) : null}
+              </div>
 
-        <div className="space-y-2">
-          <label htmlFor="additionalKey" className="text-sm font-semibold text-slate-900">
-            Additional Key
-          </label>
-          <input id="additionalKey" name="additionalKey" className="form-input" />
-        </div>
+              <div className="space-y-2">
+                <label htmlFor="companyName" className="text-sm font-semibold text-slate-900">
+                  Company Name *
+                </label>
+                <input id="companyName" name="companyName" required className="form-input" />
+                {fieldError(state.errors, "companyName") ? (
+                  <p className="form-error">{fieldError(state.errors, "companyName")}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="contactNumber" className="text-sm font-semibold text-slate-900">
+                  Contact Number *
+                </label>
+                <input id="contactNumber" name="contactNumber" required className="form-input" />
+                {fieldError(state.errors, "contactNumber") ? (
+                  <p className="form-error">{fieldError(state.errors, "contactNumber")}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="carRegistrationNumber"
+                  className="text-sm font-semibold text-slate-900"
+                >
+                  Car Registration Number
+                </label>
+                <input
+                  id="carRegistrationNumber"
+                  name="carRegistrationNumber"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="visitorType" className="text-sm font-semibold text-slate-900">
+                  Visitor Type *
+                </label>
+              <select
+                  id="visitorType"
+                  name="visitorType"
+                  defaultValue={VisitorType.CONTRACTOR}
+                  required
+                  className="form-input"
+                >
+                  {visitorTypeOptions
+                    .filter((option) => option.value !== VisitorType.HOTEL_STAFF)
+                    .map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                    ))}
+                </select>
+                {fieldError(state.errors, "visitorType") ? (
+                  <p className="form-error">{fieldError(state.errors, "visitorType")}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="numberOfVisitors" className="text-sm font-semibold text-slate-900">
+                  Number of Visitors *
+                </label>
+                <input
+                  id="numberOfVisitors"
+                  name="numberOfVisitors"
+                  type="number"
+                  min="1"
+                  defaultValue="1"
+                  required
+                  className="form-input"
+                />
+                {fieldError(state.errors, "numberOfVisitors") ? (
+                  <p className="form-error">{fieldError(state.errors, "numberOfVisitors")}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="contractorSet" className="text-sm font-semibold text-slate-900">
+                  Contractor Key Set
+                </label>
+                <input id="contractorSet" name="contractorSet" className="form-input" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="reasonDetail" className="text-sm font-semibold text-slate-900">
+                Reason/Detail of the Visit *
+              </label>
+              <textarea
+                id="reasonDetail"
+                name="reasonDetail"
+                required
+                rows={4}
+                className="form-input"
+              />
+              {fieldError(state.errors, "reasonDetail") ? (
+                <p className="form-error">{fieldError(state.errors, "reasonDetail")}</p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="additionalKey" className="text-sm font-semibold text-slate-900">
+                Additional Key
+              </label>
+              <input id="additionalKey" name="additionalKey" className="form-input" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <label htmlFor="staffProfileId" className="text-sm font-semibold text-slate-900">
+                Staff Name *
+              </label>
+              <select
+                id="staffProfileId"
+                name="staffProfileId"
+                required
+                className="form-input"
+                defaultValue=""
+              >
+                <option value="">Select a configured staff member</option>
+                {staffOptions.map((staff) => (
+                  <option key={staff.id} value={staff.id}>
+                    {staff.name} | {staff.position} | {staff.phone}
+                  </option>
+                ))}
+              </select>
+              {fieldError(state.errors, "staffProfileId") ? (
+                <p className="form-error">{fieldError(state.errors, "staffProfileId")}</p>
+              ) : null}
+              {staffOptions.length === 0 ? (
+                <p className="text-sm text-amber-700">
+                  No staff have been configured for this property yet. Add them in Staff
+                  Management first.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="reasonDetailStaff" className="text-sm font-semibold text-slate-900">
+                Reason / Task *
+              </label>
+              <textarea
+                id="reasonDetailStaff"
+                name="reasonDetail"
+                required
+                rows={4}
+                className="form-input"
+              />
+              {fieldError(state.errors, "reasonDetail") ? (
+                <p className="form-error">{fieldError(state.errors, "reasonDetail")}</p>
+              ) : null}
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="contractorSetStaff" className="text-sm font-semibold text-slate-900">
+                  Key Set
+                </label>
+                <input id="contractorSetStaff" name="contractorSet" className="form-input" />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="additionalKeyStaff" className="text-sm font-semibold text-slate-900">
+                  Additional Key
+                </label>
+                <input id="additionalKeyStaff" name="additionalKey" className="form-input" />
+              </div>
+            </div>
+          </>
+        )}
 
         <SignaturePadField
           label="Signature"
@@ -191,6 +298,7 @@ export function SignInForm({ hotelSlug }: SignInFormProps) {
         <SubmitButton
           label="Submit Sign In"
           pendingLabel="Saving..."
+          disabled={activeTab === SignInType.STAFF && staffOptions.length === 0}
           className="inline-flex w-full items-center justify-center rounded-full bg-[#0f2350] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#17346f] disabled:cursor-not-allowed disabled:opacity-70"
         />
       </form>

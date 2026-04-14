@@ -6,6 +6,7 @@ import { getVisitRecordForHotel } from "@/lib/data";
 import {
   formatDateTime,
   getRecordStatusLabel,
+  getSignInTypeLabel,
   getTaskStatusLabel,
   getVisitorTypeLabel,
 } from "@/lib/format";
@@ -50,6 +51,7 @@ export default async function RecordDetailPage({ params }: PageProps) {
         <div className="rounded-[32px] bg-white p-6 shadow-[0_25px_70px_rgba(15,23,42,0.08)]">
           <div className="grid gap-5 md:grid-cols-2">
             {[
+              ["Sign In Type", getSignInTypeLabel(record.signInType)],
               ["Company", record.companyName],
               ["Contact Number", record.contactNumber],
               ["Car Registration", record.carRegistrationNumber || "No vehicle"],

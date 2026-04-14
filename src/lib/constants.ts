@@ -1,4 +1,4 @@
-import { RecordStatus, Role, TaskStatus, VisitorType } from "@prisma/client";
+import { RecordStatus, Role, SignInType, TaskStatus, VisitorType } from "@prisma/client";
 
 export const SUPER_ADMIN_USERNAME = "admin@yehsgroup.com.au";
 export const APP_TIME_ZONE = "Australia/Sydney";
@@ -32,6 +32,10 @@ export const visitorTypeOptions: Array<{ value: VisitorType; label: string }> = 
     value: VisitorType.PRE_ONBOARDED_STAFF,
     label: "Pre-Onboarded Staff - Trainee with pending account, or pre-onboarded staff without access.",
   },
+  {
+    value: VisitorType.HOTEL_STAFF,
+    label: "Hotel Staff - Configured staff attendance record.",
+  },
 ];
 
 export const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
@@ -46,6 +50,11 @@ export const recordStatusOptions: Array<{ value: RecordStatus; label: string }> 
   { value: RecordStatus.OPEN, label: "Open" },
   { value: RecordStatus.CLOSED, label: "Closed" },
 ];
+
+export const signInTypeLabels: Record<SignInType, string> = {
+  CONTRACTOR: "Contractor",
+  STAFF: "Staff",
+};
 
 export const roleLabels: Record<Role, string> = {
   ADMIN: "Admin",

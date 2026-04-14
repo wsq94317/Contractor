@@ -1,6 +1,6 @@
 "use server";
 
-import { RecordStatus } from "@prisma/client";
+import { RecordStatus, SignInType, VisitorType } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -32,25 +32,64 @@ export async function submitSignIn(
     return { message: "Hotel not found." };
   }
 
-  await prisma.visitRecord.create({
-    data: {
-      hotelId: hotel.id,
-      visitorName: parsed.data.visitorName,
-      companyName: parsed.data.companyName,
-      contactNumber: parsed.data.contactNumber,
-      carRegistrationNumber: parsed.data.carRegistrationNumber,
-      visitorType: parsed.data.visitorType,
-      numberOfVisitors: parsed.data.numberOfVisitors,
-      reasonDetail: parsed.data.reasonDetail,
-      contractorSet: parsed.data.contractorSet,
-      additionalKey: parsed.data.additionalKey,
-      signInSignature: parsed.data.signInSignature,
-      signInAt: new Date(),
-      recordStatus: RecordStatus.OPEN,
-    },
-  });
+  if (parsed.data.signInType === SignInType.CONTRACTOR) {
+    await prisma.visitRecord.create({
+      data: {
+        hotelId: hotel.id,
+        signInType: SignInType.CONTRACTOR,
+        visitorName: parsed.data.visitorName,
+        companyName: parsed.data.companyName,
+        contactNumber: parsed.data.contactNumber,
+        carRegistrationNumber: parsed.data.carRegistrationNumber,
+        visitorType: parsed.data.visitorType,
+        numberOfVisitors: parsed.data.numberOfVisitors,
+        reasonDetail: parsed.data.reasonDetail,
+        contractorSet: parsed.data.contractorSet,
+        additionalKey: parsed.data.additionalKey,
+        signInSignature: parsed.data.signInSignature,
+        signInAt: new Date(),
+        recordStatus: RecordStatus.OPEN,
+      },
+    });
+  } else {
+    const staffProfile = await prisma.staffProfile.findFirst({
+      where: {
+        id: parsed.data.staffProfileId,
+        hotels: {
+          some: {
+            hotelId: hotel.id,
+          },
+        },
+      },
+    });
+
+    if (!staffProfile) {
+      return { message: "Selected staff member is not available for this hotel." };
+    }
+
+    await prisma.visitRecord.create({
+      data: {
+        hotelId: hotel.id,
+        signInType: SignInType.STAFF,
+        staffProfileId: staffProfile.id,
+        visitorName: staffProfile.name,
+        companyName: staffProfile.position,
+        contactNumber: staffProfile.phone,
+        visitorType: VisitorType.HOTEL_STAFF,
+        numberOfVisitors: 1,
+        reasonDetail: parsed.data.reasonDetail,
+        contractorSet: parsed.data.contractorSet,
+        additionalKey: parsed.data.additionalKey,
+        signInSignature: parsed.data.signInSignature,
+        signInAt: new Date(),
+        recordStatus: RecordStatus.OPEN,
+      },
+    });
+  }
 
   revalidatePath(`/hotels/${hotel.slug}/sign-out`);
+  revalidatePath("/staff/records");
+  revalidatePath("/staff/attendance");
   redirect(`/hotels/${hotel.slug}?signedIn=1`);
 }
 
@@ -105,5 +144,6 @@ export async function submitSignOut(
 
   revalidatePath(`/hotels/${hotel.slug}/sign-out`);
   revalidatePath("/staff/records");
+  revalidatePath("/staff/attendance");
   redirect(`/hotels/${hotel.slug}?signedOut=1`);
 }

@@ -8,10 +8,10 @@ import { prisma } from "@/lib/prisma";
 import { clearSession, getSession, setSession } from "@/lib/session";
 import { SUPER_ADMIN_USERNAME } from "@/lib/constants";
 
-export const requireStaffSession = cache(async () => {
+export const getValidatedStaffSession = cache(async () => {
   const session = await getSession();
   if (!session?.userId) {
-    redirect("/");
+    return null;
   }
 
   const user = await prisma.user.findUnique({
@@ -21,7 +21,7 @@ export const requireStaffSession = cache(async () => {
 
   if (!user || !user.isActive) {
     await clearSession();
-    redirect("/");
+    return null;
   }
 
   return {
@@ -35,6 +35,16 @@ export const requireStaffSession = cache(async () => {
     hotelName: user.hotel.name,
     hotelShortName: user.hotel.shortName,
   };
+});
+
+export const requireStaffSession = cache(async () => {
+  const session = await getValidatedStaffSession();
+
+  if (!session) {
+    redirect("/");
+  }
+
+  return session;
 });
 
 export async function authenticateHotelUser(hotelSlug: string, username: string, password: string) {
