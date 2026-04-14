@@ -77,7 +77,9 @@ export default async function RecordDetailPage({ params }: PageProps) {
               </p>
             </div>
             <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Contractor Set</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
+                Contractor Key Set
+              </p>
               <p className="mt-2 text-sm leading-7 text-slate-900">
                 {record.contractorSet || "Not provided"}
               </p>
