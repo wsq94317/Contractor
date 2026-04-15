@@ -50,7 +50,38 @@ type RecordFilters = {
   signInType?: SignInType | "ALL";
   dateFrom?: string;
   dateTo?: string;
+  sort?: RecordSort;
 };
+
+export type RecordSort =
+  | "SIGN_IN_DESC"
+  | "SIGN_IN_ASC"
+  | "SIGN_OUT_DESC"
+  | "SIGN_OUT_ASC"
+  | "NAME_ASC"
+  | "NAME_DESC";
+
+function compareNullableDate(
+  leftValue: Date | null,
+  rightValue: Date | null,
+  direction: "asc" | "desc",
+) {
+  if (!leftValue && !rightValue) {
+    return 0;
+  }
+
+  if (!leftValue) {
+    return 1;
+  }
+
+  if (!rightValue) {
+    return -1;
+  }
+
+  return direction === "asc"
+    ? leftValue.getTime() - rightValue.getTime()
+    : rightValue.getTime() - leftValue.getTime();
+}
 
 export async function getFilteredVisitRecords(filters: RecordFilters) {
   const where: Prisma.VisitRecordWhereInput = {
@@ -92,7 +123,7 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
     }
   }
 
-  return prisma.visitRecord.findMany({
+  const records = await prisma.visitRecord.findMany({
     where,
     orderBy: { signInAt: "desc" },
     include: {
@@ -107,6 +138,26 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
         },
       },
     },
+  });
+
+  const sort = filters.sort ?? "SIGN_IN_DESC";
+
+  return [...records].sort((left, right) => {
+    switch (sort) {
+      case "NAME_ASC":
+        return left.visitorName.localeCompare(right.visitorName, "en-AU");
+      case "NAME_DESC":
+        return right.visitorName.localeCompare(left.visitorName, "en-AU");
+      case "SIGN_IN_ASC":
+        return left.signInAt.getTime() - right.signInAt.getTime();
+      case "SIGN_OUT_DESC":
+        return compareNullableDate(left.signOutAt, right.signOutAt, "desc");
+      case "SIGN_OUT_ASC":
+        return compareNullableDate(left.signOutAt, right.signOutAt, "asc");
+      case "SIGN_IN_DESC":
+      default:
+        return right.signInAt.getTime() - left.signInAt.getTime();
+    }
   });
 }
 

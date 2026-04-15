@@ -5,7 +5,7 @@ import { softDeleteRecord } from "@/actions/record-actions";
 import { StaffAdminTabs } from "@/components/staff-admin-tabs";
 import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
 import { recordStatusOptions, visitorTypeOptions } from "@/lib/constants";
-import { getFilteredVisitRecords } from "@/lib/data";
+import { getFilteredVisitRecords, type RecordSort } from "@/lib/data";
 import {
   formatDateTime,
   getRecordStatusLabel,
@@ -17,6 +17,15 @@ import {
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const recordSortOptions: Array<{ value: RecordSort; label: string }> = [
+  { value: "SIGN_IN_DESC", label: "Sign In: Newest first" },
+  { value: "SIGN_IN_ASC", label: "Sign In: Oldest first" },
+  { value: "SIGN_OUT_DESC", label: "Sign Out: Newest first" },
+  { value: "SIGN_OUT_ASC", label: "Sign Out: Oldest first" },
+  { value: "NAME_ASC", label: "Name: A to Z" },
+  { value: "NAME_DESC", label: "Name: Z to A" },
+];
 
 export default async function StaffRecordsPage({ searchParams }: PageProps) {
   const session = await requireStaffSession();
@@ -33,6 +42,8 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
   const dateFrom =
     typeof resolvedSearchParams.dateFrom === "string" ? resolvedSearchParams.dateFrom : "";
   const dateTo = typeof resolvedSearchParams.dateTo === "string" ? resolvedSearchParams.dateTo : "";
+  const sort =
+    typeof resolvedSearchParams.sort === "string" ? resolvedSearchParams.sort : "SIGN_IN_DESC";
 
   const records = await getFilteredVisitRecords({
     hotelId: session.hotelId,
@@ -41,6 +52,7 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
     visitorType,
     dateFrom,
     dateTo,
+    sort: sort as RecordSort,
   });
 
   const openCount = records.filter((record) => record.recordStatus === RecordStatus.OPEN).length;
@@ -78,7 +90,7 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <form className="grid gap-4 rounded-[28px] border border-slate-200 bg-slate-50 p-5 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]">
+        <form className="grid gap-4 rounded-[28px] border border-slate-200 bg-slate-50 p-5 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_1.2fr_auto]">
           <input
             type="text"
             name="q"
@@ -104,6 +116,13 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
           </select>
           <input type="date" name="dateFrom" defaultValue={dateFrom} className="form-input" />
           <input type="date" name="dateTo" defaultValue={dateTo} className="form-input" />
+          <select name="sort" defaultValue={sort} className="form-input">
+            {recordSortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             className="rounded-full border border-[#d4a62a] bg-[#d4a62a] px-5 py-3 text-sm font-semibold text-[#0f2350] transition hover:bg-[#f3cc5f]"
