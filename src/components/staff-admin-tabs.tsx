@@ -2,14 +2,19 @@ import Link from "next/link";
 
 type StaffAdminTabsProps = {
   current: "records" | "staff" | "attendance";
+  canViewAttendance?: boolean;
 };
 
-export function StaffAdminTabs({ current }: StaffAdminTabsProps) {
+export function StaffAdminTabs({ current, canViewAttendance = true }: StaffAdminTabsProps) {
   const tabs = [
     { key: "records", label: "Record Management", href: "/staff/records" },
     { key: "staff", label: "Staff Management", href: "/staff/staff" },
     { key: "attendance", label: "Staff Attendance", href: "/staff/attendance" },
-  ] as const;
+  ].filter((tab) => canViewAttendance || tab.key !== "attendance") as Array<{
+    key: StaffAdminTabsProps["current"];
+    label: string;
+    href: string;
+  }>;
 
   return (
     <div className="sticky top-4 z-20 w-fit max-w-full rounded-[32px] bg-[#f4f7fb]/90 p-1 backdrop-blur">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { StaffAdminTabs } from "@/components/staff-admin-tabs";
 import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
@@ -17,7 +18,13 @@ type PageProps = {
 
 export default async function StaffAttendancePage({ searchParams }: PageProps) {
   const session = await requireStaffSession();
-  const canManageRecords = isSuperAdmin(session.username);
+  const isAdmin = isSuperAdmin(session.username);
+
+  if (!isAdmin) {
+    redirect("/staff/records");
+  }
+
+  const canManageRecords = isAdmin;
   const resolvedSearchParams = await searchParams;
 
   const q = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
@@ -46,7 +53,7 @@ export default async function StaffAttendancePage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-8">
-      <StaffAdminTabs current="attendance" />
+      <StaffAdminTabs current="attendance" canViewAttendance />
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[28px] bg-white p-6 shadow-[0_20px_55px_rgba(15,23,42,0.08)]">

@@ -10,6 +10,7 @@ type PageProps = {
 export default async function StaffManagementPage({ searchParams }: PageProps) {
   const session = await requireStaffSession();
   const canDelete = isSuperAdmin(session.username);
+  const canViewAttendance = isSuperAdmin(session.username);
   const resolvedSearchParams = await searchParams;
   const isCreated = resolvedSearchParams.created === "1";
   const isUpdated = resolvedSearchParams.updated === "1";
@@ -22,7 +23,7 @@ export default async function StaffManagementPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-8">
-      <StaffAdminTabs current="staff" />
+      <StaffAdminTabs current="staff" canViewAttendance={canViewAttendance} />
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[28px] bg-white p-6 shadow-[0_20px_55px_rgba(15,23,42,0.08)]">

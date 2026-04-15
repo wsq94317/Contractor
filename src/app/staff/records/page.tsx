@@ -30,6 +30,7 @@ const recordSortOptions: Array<{ value: RecordSort; label: string }> = [
 export default async function StaffRecordsPage({ searchParams }: PageProps) {
   const session = await requireStaffSession();
   const canManageRecords = isSuperAdmin(session.username);
+  const canViewAttendance = isSuperAdmin(session.username);
   const resolvedSearchParams = await searchParams;
 
   const q = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
@@ -59,7 +60,7 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-8">
-      <StaffAdminTabs current="records" />
+      <StaffAdminTabs current="records" canViewAttendance={canViewAttendance} />
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[28px] bg-white p-6 shadow-[0_20px_55px_rgba(15,23,42,0.08)]">
