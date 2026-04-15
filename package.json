@@ -11,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "node prisma/seed.js"
+    "db:seed": "node prisma/seed.js",
+    "db:import:legacy": "node prisma/import-legacy-visit-records.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
