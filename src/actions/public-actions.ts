@@ -115,12 +115,17 @@ export async function submitSignOut(
     return { message: "Hotel not found." };
   }
 
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+
   const openRecord = await prisma.visitRecord.findFirst({
     where: {
       id: parsed.data.visitRecordId,
       hotelId: hotel.id,
       recordStatus: RecordStatus.OPEN,
       deletedAt: null,
+      signInAt: {
+        gte: twoDaysAgo,
+      },
     },
   });
 

@@ -29,6 +29,7 @@ export function groupStaffAttendanceRecords<T extends AttendanceRecord>(records:
       phone: string;
       position: string;
       totalHours: number;
+      latestSignOutAt: Date | null;
       records: T[];
     }
   >();
@@ -49,6 +50,13 @@ export function groupStaffAttendanceRecords<T extends AttendanceRecord>(records:
     if (existingGroup) {
       existingGroup.records.push(record);
       existingGroup.totalHours += getDurationHoursValue(record.signInAt, record.signOutAt);
+      if (
+        record.signOutAt &&
+        (!existingGroup.latestSignOutAt ||
+          record.signOutAt.getTime() > existingGroup.latestSignOutAt.getTime())
+      ) {
+        existingGroup.latestSignOutAt = record.signOutAt;
+      }
       continue;
     }
 
@@ -58,9 +66,27 @@ export function groupStaffAttendanceRecords<T extends AttendanceRecord>(records:
       phone: record.staffProfile?.phone ?? record.contactNumber,
       position: record.staffProfile?.position ?? "",
       totalHours: getDurationHoursValue(record.signInAt, record.signOutAt),
+      latestSignOutAt: record.signOutAt,
       records: [record],
     });
   }
 
-  return [...groups.values()];
+  return [...groups.values()].sort((left, right) => {
+    if (!left.latestSignOutAt && !right.latestSignOutAt) {
+      return left.staffName.localeCompare(right.staffName, "en-AU");
+    }
+
+    if (!left.latestSignOutAt) {
+      return 1;
+    }
+
+    if (!right.latestSignOutAt) {
+      return -1;
+    }
+
+    return (
+      right.latestSignOutAt.getTime() - left.latestSignOutAt.getTime() ||
+      left.staffName.localeCompare(right.staffName, "en-AU")
+    );
+  });
 }

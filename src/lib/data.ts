@@ -24,11 +24,16 @@ export async function getHotelBySlug(slug: string) {
 }
 
 export async function getOpenVisitRecordsByHotel(hotelId: string) {
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+
   return prisma.visitRecord.findMany({
     where: {
       hotelId,
       recordStatus: RecordStatus.OPEN,
       deletedAt: null,
+      signInAt: {
+        gte: twoDaysAgo,
+      },
     },
     orderBy: { signInAt: "desc" },
     select: {
@@ -47,6 +52,7 @@ type RecordFilters = {
   q?: string;
   status?: RecordStatus | "ALL";
   visitorType?: string;
+  visitorNames?: string[];
   signInType?: SignInType | "ALL";
   dateFrom?: string;
   dateTo?: string;
@@ -109,6 +115,12 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
     where.visitorType = filters.visitorType as never;
   }
 
+  if (filters.visitorNames?.length) {
+    where.visitorName = {
+      in: filters.visitorNames,
+    };
+  }
+
   if (filters.signInType && filters.signInType !== "ALL") {
     where.signInType = filters.signInType;
   }
@@ -159,6 +171,24 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
         return right.signInAt.getTime() - left.signInAt.getTime();
     }
   });
+}
+
+export async function getVisitorNamesForHotel(hotelId: string) {
+  const records = await prisma.visitRecord.findMany({
+    where: {
+      hotelId,
+      deletedAt: null,
+    },
+    select: {
+      visitorName: true,
+    },
+    distinct: ["visitorName"],
+    orderBy: {
+      visitorName: "asc",
+    },
+  });
+
+  return records.map((record) => record.visitorName);
 }
 
 export async function getVisitRecordForHotel(recordId: string, hotelId: string) {

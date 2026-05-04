@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { RecordStatus } from "@prisma/client";
 
-import { softDeleteRecord } from "@/actions/record-actions";
+import { RecordManagementPanel } from "@/components/record-management-panel";
 import { StaffAdminTabs } from "@/components/staff-admin-tabs";
 import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
 import { recordStatusOptions, visitorTypeOptions } from "@/lib/constants";
-import { getFilteredVisitRecords, type RecordSort } from "@/lib/data";
+import {
+  getFilteredVisitRecords,
+  getVisitorNamesForHotel,
+  type RecordSort,
+} from "@/lib/data";
 import {
   formatDateTime,
-  getRecordStatusLabel,
-  getSignInTypeLabel,
-  getTaskStatusLabel,
-  getVisitorTypeLabel,
+  getDurationHours,
+  getDurationHoursValue,
 } from "@/lib/format";
 
 type PageProps = {
@@ -45,16 +47,25 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
   const dateTo = typeof resolvedSearchParams.dateTo === "string" ? resolvedSearchParams.dateTo : "";
   const sort =
     typeof resolvedSearchParams.sort === "string" ? resolvedSearchParams.sort : "SIGN_IN_DESC";
+  const visitorNames = Array.isArray(resolvedSearchParams.visitorName)
+    ? resolvedSearchParams.visitorName.filter((value): value is string => typeof value === "string")
+    : typeof resolvedSearchParams.visitorName === "string"
+      ? [resolvedSearchParams.visitorName]
+      : [];
 
-  const records = await getFilteredVisitRecords({
-    hotelId: session.hotelId,
-    q,
-    status: status as RecordStatus | "ALL",
-    visitorType,
-    dateFrom,
-    dateTo,
-    sort: sort as RecordSort,
-  });
+  const [records, availableVisitorNames] = await Promise.all([
+    getFilteredVisitRecords({
+      hotelId: session.hotelId,
+      q,
+      status: status as RecordStatus | "ALL",
+      visitorType,
+      visitorNames,
+      dateFrom,
+      dateTo,
+      sort: sort as RecordSort,
+    }),
+    getVisitorNamesForHotel(session.hotelId),
+  ]);
 
   const openCount = records.filter((record) => record.recordStatus === RecordStatus.OPEN).length;
 
@@ -91,163 +102,97 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <form className="grid gap-4 rounded-[28px] border border-slate-200 bg-slate-50 p-5 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_1.2fr_auto]">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder="Search visitor, company, phone, visit reason"
-            className="form-input"
-          />
-          <select name="status" defaultValue={status} className="form-input">
-            <option value="ALL">All statuses</option>
-            {recordStatusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <select name="visitorType" defaultValue={visitorType} className="form-input">
-            <option value="ALL">All visitor types</option>
-            {visitorTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <input type="date" name="dateFrom" defaultValue={dateFrom} className="form-input" />
-          <input type="date" name="dateTo" defaultValue={dateTo} className="form-input" />
-          <select name="sort" defaultValue={sort} className="form-input">
-            {recordSortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-full border border-[#d4a62a] bg-[#d4a62a] px-5 py-3 text-sm font-semibold text-[#0f2350] transition hover:bg-[#f3cc5f]"
-          >
-            Apply
-          </button>
+        <form className="space-y-4 rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+          <div className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_1.2fr_auto]">
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder="Search visitor, company, phone, visit reason"
+              className="form-input"
+            />
+            <select name="status" defaultValue={status} className="form-input">
+              <option value="ALL">All statuses</option>
+              {recordStatusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select name="visitorType" defaultValue={visitorType} className="form-input">
+              <option value="ALL">All visitor types</option>
+              {visitorTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <input type="date" name="dateFrom" defaultValue={dateFrom} className="form-input" />
+            <input type="date" name="dateTo" defaultValue={dateTo} className="form-input" />
+            <select name="sort" defaultValue={sort} className="form-input">
+              {recordSortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="rounded-full border border-[#d4a62a] bg-[#d4a62a] px-5 py-3 text-sm font-semibold text-[#0f2350] transition hover:bg-[#f3cc5f]"
+            >
+              Apply
+            </button>
+          </div>
+
+          <details className="rounded-[24px] border border-slate-200 bg-white">
+            <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-[#0f2350] marker:hidden">
+              Filter by visitor name
+              {visitorNames.length ? ` (${visitorNames.length} selected)` : ""}
+            </summary>
+            <div className="border-t border-slate-200 px-5 py-4">
+              <div className="max-h-64 space-y-3 overflow-y-auto pr-2">
+                {availableVisitorNames.map((name) => (
+                  <label key={name} className="flex items-center gap-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      name="visitorName"
+                      value={name}
+                      defaultChecked={visitorNames.includes(name)}
+                      className="h-4 w-4 rounded border-slate-300 text-[#0f2350] focus:ring-[#0f2350]"
+                    />
+                    <span>{name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </details>
         </form>
 
-        {records.length === 0 ? (
-          <div className="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-slate-500">
-            No records match the current filters.
-          </div>
-        ) : (
-          <div className="mt-6 space-y-4">
-            <div className="hidden rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_auto] xl:gap-4">
-              <span>Visitor</span>
-              <span>Company</span>
-              <span>Visitor Type</span>
-              <span>In / Out</span>
-              <span>Actions</span>
-            </div>
-
-            {records.map((record) => (
-              <article
-                key={record.id}
-                className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
-              >
-                <div className="flex flex-col gap-4 px-5 py-5 xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_auto] xl:items-center xl:gap-4">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-lg font-semibold text-slate-950">{record.visitorName}</p>
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                          record.recordStatus === RecordStatus.OPEN
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-emerald-100 text-emerald-800"
-                        }`}
-                      >
-                        {getRecordStatusLabel(record.recordStatus)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">{record.contactNumber}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-slate-500">{record.reasonDetail}</p>
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-900">{record.companyName}</p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Car: {record.carRegistrationNumber || "No vehicle"}
-                    </p>
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-900">
-                      {getVisitorTypeLabel(record.visitorType)}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Visitors: {record.numberOfVisitors}
-                    </p>
-                  </div>
-
-                  <div className="min-w-0 text-sm text-slate-600">
-                    <p>
-                      <span className="font-semibold text-slate-900">In:</span>{" "}
-                      {formatDateTime(record.signInAt)}
-                    </p>
-                    <p className="mt-1">
-                      <span className="font-semibold text-slate-900">Out:</span>{" "}
-                      {formatDateTime(record.signOutAt)}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-                    <Link
-                      href={`/staff/records/${record.id}`}
-                      className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-[#0f2350] transition hover:border-[#0f2350] hover:bg-slate-50"
-                    >
-                      View
-                    </Link>
-                    {canManageRecords ? (
-                      <Link
-                        href={`/staff/records/${record.id}/edit`}
-                        className="rounded-full border border-[#d4a62a] px-4 py-2 text-sm font-semibold text-[#8b6914] transition hover:bg-[#fff8df]"
-                      >
-                        Edit
-                      </Link>
-                    ) : null}
-                    {canManageRecords ? (
-                      <form action={softDeleteRecord.bind(null, record.id)}>
-                        <button
-                          type="submit"
-                          className="rounded-full border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
-                        >
-                          Delete
-                        </button>
-                      </form>
-                    ) : null}
-                  </div>
-                </div>
-
-                <details className="border-t border-slate-200 bg-slate-50/70">
-                  <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-[#0f2350] marker:hidden">
-                    Expand details
-                  </summary>
-                  <div className="grid gap-4 px-5 pb-5 md:grid-cols-2 xl:grid-cols-4">
-                    {[
-                      ["Task Status", getTaskStatusLabel(record.taskStatus)],
-                      ["Key Return", record.keyReturnTo || "Pending"],
-                      ["Key Set", record.contractorSet || "Not provided"],
-                      ["Additional Key", record.additionalKey || "Not provided"],
-                      ["Sign Out Note", record.signOutNote || "No note"],
-                      ["Sign In Type", getSignInTypeLabel(record.signInType)],
-                    ].map(([label, value]) => (
-                      <div key={label} className="rounded-[20px] border border-slate-200 bg-white p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-                        <p className="mt-2 text-sm leading-6 text-slate-900">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              </article>
-            ))}
-          </div>
-        )}
+        <RecordManagementPanel
+          canManageRecords={canManageRecords}
+          records={records.map((record) => ({
+            id: record.id,
+            signInType: record.signInType,
+            visitorName: record.visitorName,
+            companyName: record.companyName,
+            contactNumber: record.contactNumber,
+            carRegistrationNumber: record.carRegistrationNumber,
+            visitorType: record.visitorType,
+            numberOfVisitors: record.numberOfVisitors,
+            reasonDetail: record.reasonDetail,
+            contractorSet: record.contractorSet,
+            additionalKey: record.additionalKey,
+            recordStatus: record.recordStatus,
+            taskStatus: record.taskStatus,
+            keyReturnTo: record.keyReturnTo,
+            signOutNote: record.signOutNote,
+            signInLabel: formatDateTime(record.signInAt),
+            signOutLabel: formatDateTime(record.signOutAt),
+            hoursLabel: getDurationHours(record.signInAt, record.signOutAt),
+            hoursValue: getDurationHoursValue(record.signInAt, record.signOutAt),
+            canSettle: Boolean(record.signOutAt),
+          }))}
+        />
       </section>
     </div>
   );
