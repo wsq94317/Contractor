@@ -1,4 +1,4 @@
-import { getValidatedStaffSession } from "@/lib/auth";
+import { getValidatedStaffSession, isSuperAdmin } from "@/lib/auth";
 import { groupStaffAttendanceRecords } from "@/lib/attendance";
 import { getStaffAttendanceRecords } from "@/lib/data";
 import { formatDateTime, getDurationHours, getRecordStatusLabel } from "@/lib/format";
@@ -12,6 +12,10 @@ export async function GET(request: Request) {
 
   if (!session) {
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  if (!isSuperAdmin(session.username)) {
+    return new Response("Forbidden", { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "prebuild": "prisma generate",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
