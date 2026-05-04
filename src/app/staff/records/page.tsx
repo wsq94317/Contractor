@@ -64,7 +64,14 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
       dateTo,
       sort: sort as RecordSort,
     }),
-    getVisitorNamesForHotel(session.hotelId),
+    getVisitorNamesForHotel({
+      hotelId: session.hotelId,
+      q,
+      status: status as RecordStatus | "ALL",
+      visitorType,
+      dateFrom,
+      dateTo,
+    }),
   ]);
 
   const openCount = records.filter((record) => record.recordStatus === RecordStatus.OPEN).length;
@@ -188,6 +195,8 @@ export default async function StaffRecordsPage({ searchParams }: PageProps) {
             signOutNote: record.signOutNote,
             signInLabel: formatDateTime(record.signInAt),
             signOutLabel: formatDateTime(record.signOutAt),
+            signInTimestamp: record.signInAt.getTime(),
+            signOutTimestamp: record.signOutAt?.getTime() ?? null,
             hoursLabel: getDurationHours(record.signInAt, record.signOutAt),
             hoursValue: getDurationHoursValue(record.signInAt, record.signOutAt),
             canSettle: Boolean(record.signOutAt),

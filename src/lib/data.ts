@@ -67,29 +67,10 @@ export type RecordSort =
   | "NAME_ASC"
   | "NAME_DESC";
 
-function compareNullableDate(
-  leftValue: Date | null,
-  rightValue: Date | null,
-  direction: "asc" | "desc",
+function buildVisitRecordWhere(
+  filters: Omit<RecordFilters, "sort">,
+  options?: { includeVisitorNames?: boolean },
 ) {
-  if (!leftValue && !rightValue) {
-    return 0;
-  }
-
-  if (!leftValue) {
-    return 1;
-  }
-
-  if (!rightValue) {
-    return -1;
-  }
-
-  return direction === "asc"
-    ? leftValue.getTime() - rightValue.getTime()
-    : rightValue.getTime() - leftValue.getTime();
-}
-
-export async function getFilteredVisitRecords(filters: RecordFilters) {
   const where: Prisma.VisitRecordWhereInput = {
     hotelId: filters.hotelId,
     deletedAt: null,
@@ -115,7 +96,7 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
     where.visitorType = filters.visitorType as never;
   }
 
-  if (filters.visitorNames?.length) {
+  if (options?.includeVisitorNames !== false && filters.visitorNames?.length) {
     where.visitorName = {
       in: filters.visitorNames,
     };
@@ -134,6 +115,34 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
       where.signInAt.lte = new Date(`${filters.dateTo}T23:59:59`);
     }
   }
+
+  return where;
+}
+
+function compareNullableDate(
+  leftValue: Date | null,
+  rightValue: Date | null,
+  direction: "asc" | "desc",
+) {
+  if (!leftValue && !rightValue) {
+    return 0;
+  }
+
+  if (!leftValue) {
+    return 1;
+  }
+
+  if (!rightValue) {
+    return -1;
+  }
+
+  return direction === "asc"
+    ? leftValue.getTime() - rightValue.getTime()
+    : rightValue.getTime() - leftValue.getTime();
+}
+
+export async function getFilteredVisitRecords(filters: RecordFilters) {
+  const where = buildVisitRecordWhere(filters);
 
   const records = await prisma.visitRecord.findMany({
     where,
@@ -173,12 +182,9 @@ export async function getFilteredVisitRecords(filters: RecordFilters) {
   });
 }
 
-export async function getVisitorNamesForHotel(hotelId: string) {
+export async function getVisitorNamesForHotel(filters: Omit<RecordFilters, "sort" | "visitorNames">) {
   const records = await prisma.visitRecord.findMany({
-    where: {
-      hotelId,
-      deletedAt: null,
-    },
+    where: buildVisitRecordWhere(filters, { includeVisitorNames: false }),
     select: {
       visitorName: true,
     },
