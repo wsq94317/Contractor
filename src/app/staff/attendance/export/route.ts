@@ -1,7 +1,15 @@
+import { format } from "date-fns";
+
 import { getValidatedStaffSession, isSuperAdmin } from "@/lib/auth";
-import { groupStaffAttendanceRecords } from "@/lib/attendance";
+import { groupStaffAttendanceByWeek } from "@/lib/attendance";
 import { getStaffAttendanceRecords } from "@/lib/data";
-import { formatDateTime, getDurationHours, getRecordStatusLabel } from "@/lib/format";
+import {
+  formatDateTime,
+  formatRoundedDateTime,
+  getDurationHours,
+  getRecordStatusLabel,
+  getRoundedDurationHours,
+} from "@/lib/format";
 
 function escapeCsv(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
@@ -29,10 +37,13 @@ export async function GET(request: Request) {
     dateFrom,
     dateTo,
   });
-  const groupedRecords = groupStaffAttendanceRecords(records);
+  const weekGroups = groupStaffAttendanceByWeek(records);
 
   const header = [
     "Hotel",
+    "Week",
+    "Week Start",
+    "Week End",
     "Staff Name",
     "Phone",
     "Position",
@@ -40,54 +51,104 @@ export async function GET(request: Request) {
     "Task",
     "Key Set",
     "Additional Key",
-    "Sign In",
-    "Sign Out",
-    "Hours",
+    "Actual Sign In",
+    "Actual Sign Out",
+    "Actual Hours",
+    "Rounded Sign In",
+    "Rounded Sign Out",
+    "Payroll Hours",
     "Status",
   ];
 
-  const rows = groupedRecords.flatMap((group) => {
-    const detailRows = group.records.map((record) => [
-      session.hotelShortName,
-      group.staffName,
-      group.phone,
-      group.position,
-      new Intl.DateTimeFormat("en-AU", { dateStyle: "medium" }).format(record.signInAt),
-      record.reasonDetail,
-      record.contractorSet ?? "",
-      record.additionalKey ?? "",
-      formatDateTime(record.signInAt),
-      formatDateTime(record.signOutAt),
-      getDurationHours(record.signInAt, record.signOutAt),
-      getRecordStatusLabel(record.recordStatus),
-    ]);
+  const rows: string[][] = [];
 
-    detailRows.push([
+  for (const week of weekGroups) {
+    const weekLabel = `Week ${week.isoWeek} ${week.isoYear}`;
+    const weekStartLabel = format(week.weekStart, "yyyy-MM-dd");
+    const weekEndLabel = format(week.weekEnd, "yyyy-MM-dd");
+
+    for (const group of week.staffGroups) {
+      for (const record of group.records) {
+        rows.push([
+          session.hotelShortName,
+          weekLabel,
+          weekStartLabel,
+          weekEndLabel,
+          group.staffName,
+          group.phone,
+          group.position,
+          format(record.signInAt, "yyyy-MM-dd"),
+          record.reasonDetail,
+          record.contractorSet ?? "",
+          record.additionalKey ?? "",
+          formatDateTime(record.signInAt),
+          formatDateTime(record.signOutAt),
+          getDurationHours(record.signInAt, record.signOutAt),
+          formatRoundedDateTime(record.signInAt),
+          formatRoundedDateTime(record.signOutAt),
+          getRoundedDurationHours(record.signInAt, record.signOutAt),
+          getRecordStatusLabel(record.recordStatus),
+        ]);
+      }
+
+      // Per-staff weekly subtotal.
+      rows.push([
+        session.hotelShortName,
+        weekLabel,
+        weekStartLabel,
+        weekEndLabel,
+        group.staffName,
+        group.phone,
+        group.position,
+        "",
+        "Staff Week Subtotal",
+        "",
+        "",
+        "",
+        "",
+        group.totals.actualHours.toFixed(2),
+        "",
+        "",
+        group.totals.payrollHours.toFixed(2),
+        "",
+      ]);
+    }
+
+    // Whole-week total.
+    rows.push([
       session.hotelShortName,
-      group.staffName,
-      group.phone,
-      group.position,
-      "",
-      "Total Hours",
+      weekLabel,
+      weekStartLabel,
+      weekEndLabel,
       "",
       "",
       "",
       "",
-      group.totalHours.toFixed(2),
+      "Week Total",
+      "",
+      "",
+      "",
+      "",
+      week.totals.actualHours.toFixed(2),
+      "",
+      "",
+      week.totals.payrollHours.toFixed(2),
       "",
     ]);
-
-    return detailRows;
-  });
+  }
 
   const csv = [header, ...rows]
     .map((row) => row.map((value) => escapeCsv(String(value))).join(","))
     .join("\n");
 
+  const filename = `staff-attendance-${session.hotelSlug}${
+    dateFrom ? `-${dateFrom}` : ""
+  }${dateTo ? `_${dateTo}` : ""}.csv`;
+
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="staff-attendance-${session.hotelSlug}.csv"`,
+      "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
 }

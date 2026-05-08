@@ -11,6 +11,61 @@ function formatErrors(error: { flatten: () => { fieldErrors: Record<string, stri
   return error.flatten().fieldErrors;
 }
 
+function normalizeName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizePhone(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+async function findMatchingStaffProfile(args: {
+  hotelId: string;
+  visitorName: string;
+  contactNumber: string;
+}) {
+  const profiles = await prisma.staffProfile.findMany({
+    where: {
+      hotels: { some: { hotelId: args.hotelId } },
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      position: true,
+      companyName: true,
+      carRegistrationNumber: true,
+    },
+  });
+
+  const targetName = normalizeName(args.visitorName);
+  const targetPhone = normalizePhone(args.contactNumber);
+
+  // Prefer a name match; if multiple share the name, narrow by phone.
+  const nameMatches = profiles.filter((profile) => normalizeName(profile.name) === targetName);
+  if (nameMatches.length === 1) {
+    return nameMatches[0];
+  }
+  if (nameMatches.length > 1 && targetPhone.length > 0) {
+    const exact = nameMatches.find((profile) => normalizePhone(profile.phone) === targetPhone);
+    if (exact) {
+      return exact;
+    }
+  }
+
+  // Fallback: phone-only match (for typo'd names but consistent phone).
+  if (targetPhone.length >= 6) {
+    const phoneMatches = profiles.filter(
+      (profile) => normalizePhone(profile.phone) === targetPhone,
+    );
+    if (phoneMatches.length === 1) {
+      return phoneMatches[0];
+    }
+  }
+
+  return null;
+}
+
 export async function submitSignIn(
   _prevState: ActionState | undefined,
   formData: FormData,
@@ -33,16 +88,27 @@ export async function submitSignIn(
   }
 
   if (parsed.data.signInType === SignInType.CONTRACTOR) {
+    // Plan B: if the visitor's name matches a configured staff profile at this
+    // hotel, treat the entry as a STAFF sign-in. This patches the HS habit of
+    // signing in via the Contractor tab even when registered as staff.
+    const matchedStaff = await findMatchingStaffProfile({
+      hotelId: hotel.id,
+      visitorName: parsed.data.visitorName,
+      contactNumber: parsed.data.contactNumber,
+    });
+
     await prisma.visitRecord.create({
       data: {
         hotelId: hotel.id,
-        signInType: SignInType.CONTRACTOR,
-        visitorName: parsed.data.visitorName,
-        companyName: parsed.data.companyName,
-        contactNumber: parsed.data.contactNumber,
-        carRegistrationNumber: parsed.data.carRegistrationNumber,
-        visitorType: parsed.data.visitorType,
-        numberOfVisitors: parsed.data.numberOfVisitors,
+        signInType: matchedStaff ? SignInType.STAFF : SignInType.CONTRACTOR,
+        staffProfileId: matchedStaff?.id ?? null,
+        visitorName: matchedStaff?.name ?? parsed.data.visitorName,
+        companyName: matchedStaff?.companyName ?? parsed.data.companyName,
+        contactNumber: matchedStaff?.phone ?? parsed.data.contactNumber,
+        carRegistrationNumber:
+          matchedStaff?.carRegistrationNumber ?? parsed.data.carRegistrationNumber,
+        visitorType: matchedStaff ? VisitorType.PRE_ONBOARDED_STAFF : parsed.data.visitorType,
+        numberOfVisitors: matchedStaff ? 1 : parsed.data.numberOfVisitors,
         reasonDetail: parsed.data.reasonDetail,
         contractorSet: parsed.data.contractorSet,
         additionalKey: parsed.data.additionalKey,
