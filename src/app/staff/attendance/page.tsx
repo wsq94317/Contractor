@@ -1,8 +1,17 @@
-import { endOfWeek, format, startOfWeek, subWeeks } from "date-fns";
+import {
+  endOfMonth,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+  subWeeks,
+} from "date-fns";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { StaffAdminTabs } from "@/components/staff-admin-tabs";
+import { AttendanceExpandToggle } from "@/components/attendance-expand-toggle";
 import { isSuperAdmin, requireStaffSession } from "@/lib/auth";
 import {
   groupStaffAttendanceByWeek,
@@ -27,7 +36,9 @@ const DATE_INPUT_FORMAT = "yyyy-MM-dd";
 
 type Range = { dateFrom: string; dateTo: string };
 
-function rangeForOffset(today: Date, weeksBack: number, weeksSpan: number): Range {
+const ALL_TIME: Range = { dateFrom: "", dateTo: "" };
+
+function rangeForWeekOffset(today: Date, weeksBack: number, weeksSpan: number): Range {
   const startBase = subWeeks(today, weeksBack + (weeksSpan - 1));
   const start = startOfWeek(startBase, WEEK_OPTIONS);
   const endBase = subWeeks(today, weeksBack);
@@ -38,19 +49,42 @@ function rangeForOffset(today: Date, weeksBack: number, weeksSpan: number): Rang
   };
 }
 
-const QUICK_RANGE_KEYS = ["thisWeek", "lastWeek", "last2Weeks", "last4Weeks"] as const;
+function rangeForMonthOffset(today: Date, monthsBack: number, monthsSpan: number): Range {
+  const startBase = subMonths(today, monthsBack + (monthsSpan - 1));
+  const endBase = subMonths(today, monthsBack);
+  return {
+    dateFrom: format(startOfMonth(startBase), DATE_INPUT_FORMAT),
+    dateTo: format(endOfMonth(endBase), DATE_INPUT_FORMAT),
+  };
+}
+
+const QUICK_RANGE_KEYS = [
+  "thisWeek",
+  "lastWeek",
+  "last2Weeks",
+  "thisMonth",
+  "lastMonth",
+  "last3Months",
+  "allTime",
+] as const;
 type QuickRangeKey = (typeof QUICK_RANGE_KEYS)[number];
 
 function quickRange(today: Date, key: QuickRangeKey): Range {
   switch (key) {
     case "thisWeek":
-      return rangeForOffset(today, 0, 1);
+      return rangeForWeekOffset(today, 0, 1);
     case "lastWeek":
-      return rangeForOffset(today, 1, 1);
+      return rangeForWeekOffset(today, 1, 1);
     case "last2Weeks":
-      return rangeForOffset(today, 0, 2);
-    case "last4Weeks":
-      return rangeForOffset(today, 0, 4);
+      return rangeForWeekOffset(today, 0, 2);
+    case "thisMonth":
+      return rangeForMonthOffset(today, 0, 1);
+    case "lastMonth":
+      return rangeForMonthOffset(today, 1, 1);
+    case "last3Months":
+      return rangeForMonthOffset(today, 0, 3);
+    case "allTime":
+      return ALL_TIME;
   }
 }
 
@@ -58,7 +92,10 @@ const QUICK_RANGE_LABELS: Record<QuickRangeKey, string> = {
   thisWeek: "This Week",
   lastWeek: "Last Week",
   last2Weeks: "Last 2 Weeks",
-  last4Weeks: "Last 4 Weeks",
+  thisMonth: "This Month",
+  lastMonth: "Last Month",
+  last3Months: "Last 3 Months",
+  allTime: "All Time",
 };
 
 function detectActiveQuickRange(today: Date, range: Range): QuickRangeKey | null {
@@ -74,17 +111,22 @@ function detectActiveQuickRange(today: Date, range: Range): QuickRangeKey | null
 function buildExportHref(q: string, range: Range) {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
-  params.set("dateFrom", range.dateFrom);
-  params.set("dateTo", range.dateTo);
+  if (range.dateFrom) params.set("dateFrom", range.dateFrom);
+  if (range.dateTo) params.set("dateTo", range.dateTo);
   return `/staff/attendance/export?${params.toString()}`;
 }
 
-function buildQuickRangeHref(q: string, range: Range) {
+function buildRangeHref(q: string, range: Range, rangeKey?: QuickRangeKey) {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
-  params.set("dateFrom", range.dateFrom);
-  params.set("dateTo", range.dateTo);
-  return `/staff/attendance?${params.toString()}`;
+  if (rangeKey === "allTime") {
+    params.set("range", "allTime");
+  } else if (range.dateFrom || range.dateTo) {
+    if (range.dateFrom) params.set("dateFrom", range.dateFrom);
+    if (range.dateTo) params.set("dateTo", range.dateTo);
+  }
+  const search = params.toString();
+  return search ? `/staff/attendance?${search}` : "/staff/attendance";
 }
 
 function formatHours(value: number) {
@@ -113,12 +155,19 @@ export default async function StaffAttendancePage({ searchParams }: PageProps) {
     typeof resolvedSearchParams.dateFrom === "string" ? resolvedSearchParams.dateFrom : "";
   const rawDateTo =
     typeof resolvedSearchParams.dateTo === "string" ? resolvedSearchParams.dateTo : "";
+  const rangeParam =
+    typeof resolvedSearchParams.range === "string" ? resolvedSearchParams.range : "";
 
-  // Default to the current ISO week when no range is provided.
+  // Range resolution priority:
+  //   1. Explicit ?range=allTime → no date filter (full overview).
+  //   2. Manual dateFrom/dateTo via the form.
+  //   3. Default to the current ISO week.
   const effectiveRange: Range =
-    rawDateFrom || rawDateTo
-      ? { dateFrom: rawDateFrom, dateTo: rawDateTo }
-      : quickRange(today, "thisWeek");
+    rangeParam === "allTime"
+      ? ALL_TIME
+      : rawDateFrom || rawDateTo
+        ? { dateFrom: rawDateFrom, dateTo: rawDateTo }
+        : quickRange(today, "thisWeek");
 
   const records = await getStaffAttendanceRecords({
     hotelId: session.hotelId,
@@ -170,7 +219,12 @@ export default async function StaffAttendancePage({ searchParams }: PageProps) {
             <p className="text-xs uppercase tracking-[0.35em] text-[#8b6914]">Admin</p>
             <h2 className="mt-2 text-3xl font-semibold text-slate-950">Staff Attendance</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Showing {effectiveRange.dateFrom} → {effectiveRange.dateTo} · weeks start Monday
+              {effectiveRange.dateFrom || effectiveRange.dateTo
+                ? `Showing ${effectiveRange.dateFrom || "start"} → ${
+                    effectiveRange.dateTo || "now"
+                  }`
+                : "Showing all records"}{" "}
+              · weeks start Monday
             </p>
           </div>
           <Link
@@ -184,11 +238,12 @@ export default async function StaffAttendancePage({ searchParams }: PageProps) {
         <div className="mb-4 flex flex-wrap gap-2">
           {QUICK_RANGE_KEYS.map((key) => {
             const range = quickRange(today, key);
-            const active = activeQuickRange === key;
+            const active =
+              rangeParam === "allTime" ? key === "allTime" : activeQuickRange === key;
             return (
               <Link
                 key={key}
-                href={buildQuickRangeHref(q, range)}
+                href={buildRangeHref(q, range, key)}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   active
                     ? "border-[#0f2350] bg-[#0f2350] text-white"
@@ -240,11 +295,20 @@ export default async function StaffAttendancePage({ searchParams }: PageProps) {
             No staff attendance records match the current filters.
           </div>
         ) : (
-          <div className="mt-6 space-y-5">
-            {weekGroups.map((week, index) => (
-              <WeekCard key={week.weekKey} week={week} defaultOpen={index === 0} />
-            ))}
-          </div>
+          <>
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <p className="text-sm text-slate-500">
+                {weekGroups.length} week{weekGroups.length === 1 ? "" : "s"} · most recent shown
+                first
+              </p>
+              <AttendanceExpandToggle targetId="attendance-week-list" />
+            </div>
+            <div id="attendance-week-list" className="mt-3 space-y-5">
+              {weekGroups.map((week, index) => (
+                <WeekCard key={week.weekKey} week={week} defaultOpen={index === 0} />
+              ))}
+            </div>
+          </>
         )}
       </section>
     </div>
@@ -262,6 +326,7 @@ function WeekCard({
 }) {
   return (
     <details
+      data-week-card
       open={defaultOpen}
       className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white"
     >
